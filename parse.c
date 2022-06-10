@@ -48,7 +48,7 @@ Token *consume_ident() {
 void expect(char *op) {
     if (token->kind != TK_RESERVED || strlen(op) != token->len ||
         memcmp(token->str, op, token->len)) {
-        error_at(token->str, "'%c'ではありません", op);
+        error_at(token->str, "'%s'ではありません", op);
     }
     token = token->next;
 }
@@ -77,6 +77,14 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 bool startsWith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
+
+bool is_lval_initial(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+bool is_lval_char(char c) {
+    return is_lval_initial(c) || ('0' <= c && c <= '9');
+}
 
 Token *tokenize(char *p) {
     Token head;
@@ -109,8 +117,13 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        if ('a' <= *p && *p <= 'z') {
-            cur = new_token(TK_IDENT, cur, p++, 1);
+        if (is_lval_initial(*p)) {
+            int length = 0;
+            while (is_lval_char(*(p + length))) {
+                length++;
+            }
+            cur = new_token(TK_IDENT, cur, p, length);
+            p += length;
             continue;
         }
 
@@ -253,6 +266,15 @@ Node *unary() {
     return primary();
 }
 
+LVar *find_lvar(Token *tok) {
+    for (LVar *var = locals; var; var = var->next) {
+        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            return var;
+        }
+    }
+    return NULL;
+}
+
 // primary = num | ident |"(" expr ")"
 Node *primary() {
     if (consume("(")) {
@@ -264,7 +286,23 @@ Node *primary() {
     Token *ident_token = consume_ident();
     if (ident_token) {
         Node *node = new_node(ND_LVAR);
-        node->offset = (ident_token->str[0] - 'a' + 1) * 8;
+
+        LVar *lvar = find_lvar(ident_token);
+        if (lvar) {
+            node->offset = lvar->offset;
+        } else {
+            lvar = calloc(1, sizeof(LVar));
+            if (locals) {
+                lvar->next = locals;
+                lvar->offset = locals->offset + 8;
+            } else {
+                lvar->offset = 8;
+            }
+            lvar->name = ident_token->str;
+            lvar->len = ident_token->len;
+            node->offset = lvar->offset;
+            locals = lvar;
+        }
         return node;
     }
 

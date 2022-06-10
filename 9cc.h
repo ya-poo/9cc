@@ -25,6 +25,16 @@ struct Token {
     int len;
 };
 
+typedef struct LVar LVar;
+
+// ローカル変数
+struct LVar {
+    LVar *next;  // 次の変数
+    char *name;  // 変数名
+    int len;     // 名前の長さ
+    int offset;  // RBPからのオフセット
+};
+
 typedef enum {
     ND_ADD,     // +
     ND_SUB,     // -
@@ -64,3 +74,4 @@ void codegen();
 extern char *user_input;
 extern Token *token;
 extern Node *code[100];
+extern LVar *locals;
