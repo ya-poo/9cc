@@ -7,6 +7,7 @@
 char *user_input;
 // 現在着目しているトークン
 Token *token;
+Node *code[100];
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -16,8 +17,7 @@ int main(int argc, char **argv) {
 
     user_input = argv[1];
     token = tokenize(user_input);
-    Node *node = expr();
-
-    codegen(node);
+    program();
+    codegen();
     return 0;
 }
