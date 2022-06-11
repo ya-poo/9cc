@@ -72,6 +72,12 @@ Token *tokenize(char *p) {
             continue;
         }
 
+        if (strncmp(p, "return", 6) == 0 && !is_lval_char(p[6])) {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p += 6;
+            continue;
+        }
+
         if (is_lval_initial(*p)) {
             int length = 0;
             while (is_lval_char(*(p + length))) {

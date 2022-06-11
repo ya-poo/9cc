@@ -3,8 +3,8 @@
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char *op) {
-    if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-        memcmp(token->str, op, token->len)) {
+    if ((token->kind != TK_RESERVED && token->kind != TK_RETURN) ||
+        strlen(op) != token->len || memcmp(token->str, op, token->len)) {
         return false;
     }
     token = token->next;
@@ -83,9 +83,15 @@ void program() {
     code[i] = NULL;
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 Node *stmt() {
-    Node *node = expr();
+    Node *node;
+    if (consume("return")) {
+        node = new_node(ND_RETURN);
+        node->lhs = expr();
+    } else {
+        node = expr();
+    }
     expect(";");
     return node;
 }
@@ -216,6 +222,5 @@ Node *primary() {
         }
         return node;
     }
-
     return new_num(expect_number());
 }

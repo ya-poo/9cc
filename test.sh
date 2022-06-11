@@ -55,4 +55,9 @@ assert 26 'a=1; b=a+1; c=b+1; d=c+1; e=d+1; f=e+1; g=f+1; h=g+1; i=h+1; j=i+1; k
 assert 8 'foo123ABC=3; bar=5; foo123ABC+bar;'
 assert 3 '_foo123=3; _foo123;'
 
+assert 1 'return 1; 2; 3;'
+assert 2 '1; return 2; 3;'
+assert 1 'return 1; return 2;'
+assert 4 'a=1; b=3; return a+b;'
+
 echo OK
