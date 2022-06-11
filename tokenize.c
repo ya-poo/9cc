@@ -78,31 +78,31 @@ Token *tokenize(char *p) {
         }
 
         if (is_keyword_of(p, "return")) {
-            cur = new_token(TK_RETURN, cur, p, 6);
+            cur = new_token(TK_RESERVED, cur, p, 6);
             p += 6;
             continue;
         }
 
         if (is_keyword_of(p, "if")) {
-            cur = new_token(TK_IF, cur, p, 2);
+            cur = new_token(TK_RESERVED, cur, p, 2);
             p += 2;
             continue;
         }
 
         if (is_keyword_of(p, "else")) {
-            cur = new_token(TK_ELSE, cur, p, 4);
+            cur = new_token(TK_RESERVED, cur, p, 4);
             p += 4;
             continue;
         }
 
         if (is_keyword_of(p, "while")) {
-            cur = new_token(TK_WHILE, cur, p, 5);
+            cur = new_token(TK_RESERVED, cur, p, 5);
             p += 5;
             continue;
         }
 
         if (is_keyword_of(p, "for")) {
-            cur = new_token(TK_FOR, cur, p, 3);
+            cur = new_token(TK_RESERVED, cur, p, 3);
             p += 3;
             continue;
         }

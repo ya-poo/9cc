@@ -3,23 +3,8 @@
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char *op) {
-    switch (token->kind) {
-        case TK_IDENT:
-        case TK_NUM:
-        case TK_EOF: {
-            return false;
-        }
-        case TK_RESERVED:
-        case TK_RETURN:
-        case TK_IF:
-        case TK_ELSE:
-        case TK_WHILE:
-        case TK_FOR: {
-            break;
-        }
-        default: {
-            error_at(token->str, "Unknown Token");
-        }
+    if (token->kind != TK_RESERVED) {
+        return false;
     }
 
     if (strlen(op) != token->len || memcmp(token->str, op, token->len)) {
@@ -117,9 +102,9 @@ Node *stmt() {
 
     if (consume("if")) {
         node = new_node(ND_IF);
-        consume("(");
+        expect("(");
         node->cond = expr();
-        consume(")");
+        expect(")");
         node->then = stmt();
         if (consume("else")) {
             node->els = stmt();
@@ -129,9 +114,9 @@ Node *stmt() {
 
     if (consume("while")) {
         node = new_node(ND_WHILE);
-        consume("(");
+        expect("(");
         node->cond = expr();
-        consume(")");
+        expect(")");
         node->then = stmt();
         return node;
     }

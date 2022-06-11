@@ -9,15 +9,10 @@
 // tokenize.c
 //
 typedef enum {
-    TK_RESERVED,  // 記号
+    TK_RESERVED,  // 記号, 予約語
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数
     TK_EOF,       // end-of-file
-    TK_RETURN,    // return
-    TK_IF,        // if
-    TK_ELSE,      // else
-    TK_WHILE,     // while
-    TK_FOR,       // for
 } TokenKind;
 
 typedef struct Token Token;
