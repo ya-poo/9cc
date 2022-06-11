@@ -95,6 +95,12 @@ Token *tokenize(char *p) {
             continue;
         }
 
+        if (is_keyword_of(p, "while")) {
+            cur = new_token(TK_WHILE, cur, p, 5);
+            p += 5;
+            continue;
+        }
+
         if (is_lval_initial(*p)) {
             int length = 0;
             while (is_lval_char(*(p + length))) {
