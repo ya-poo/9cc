@@ -41,6 +41,31 @@ bool is_lval_char(char c) {
     return is_lval_initial(c) || ('0' <= c && c <= '9');
 }
 
+static char *keywords[] = {"return", "if", "else", "while", "for"};
+static char *operators[] = {"==", "!=", "<=", ">="};
+static char *symbols[] = {"+", "-", "*", "/", "(", ")",
+                          "<", ">", ";", "=", "{", "}"};
+char *get_reserved(char *p) {
+    for (int i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
+        int length = strlen(keywords[i]);
+        if (startsWith(p, keywords[i]) && !is_lval_char(p[length])) {
+            return keywords[i];
+        }
+    }
+    for (int i = 0; i < sizeof(operators) / sizeof(*operators); i++) {
+        if (startsWith(p, operators[i])) {
+            return operators[i];
+        }
+    }
+    for (int i = 0; i < sizeof(symbols) / sizeof(*symbols); i++) {
+        if (startsWith(p, symbols[i])) {
+            return symbols[i];
+        }
+    }
+
+    return NULL;
+}
+
 bool is_keyword_of(char *p, char *keyword) {
     int length = strlen(keyword);
     return strncmp(p, keyword, length) == 0 && !is_lval_char(p[length]);
@@ -57,15 +82,11 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        if (startsWith(p, "==") || startsWith(p, "!=") || startsWith(p, "<=") ||
-            startsWith(p, ">=")) {
-            cur = new_token(TK_RESERVED, cur, p, 2);
-            p += 2;
-            continue;
-        }
-
-        if (strchr("+-*/()<>;={}", *p)) {
-            cur = new_token(TK_RESERVED, cur, p++, 1);
+        char *reserved = get_reserved(p);
+        if (reserved) {
+            int length = strlen(reserved);
+            cur = new_token(TK_RESERVED, cur, p, length);
+            p += length;
             continue;
         }
 
@@ -74,36 +95,6 @@ Token *tokenize(char *p) {
             char *q = p;
             cur->val = strtol(p, &p, 10);
             cur->len = p - q;
-            continue;
-        }
-
-        if (is_keyword_of(p, "return")) {
-            cur = new_token(TK_RESERVED, cur, p, 6);
-            p += 6;
-            continue;
-        }
-
-        if (is_keyword_of(p, "if")) {
-            cur = new_token(TK_RESERVED, cur, p, 2);
-            p += 2;
-            continue;
-        }
-
-        if (is_keyword_of(p, "else")) {
-            cur = new_token(TK_RESERVED, cur, p, 4);
-            p += 4;
-            continue;
-        }
-
-        if (is_keyword_of(p, "while")) {
-            cur = new_token(TK_RESERVED, cur, p, 5);
-            p += 5;
-            continue;
-        }
-
-        if (is_keyword_of(p, "for")) {
-            cur = new_token(TK_RESERVED, cur, p, 3);
-            p += 3;
             continue;
         }
 
