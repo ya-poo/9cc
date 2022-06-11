@@ -3,8 +3,24 @@
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char *op) {
-    if ((token->kind != TK_RESERVED && token->kind != TK_RETURN) ||
-        strlen(op) != token->len || memcmp(token->str, op, token->len)) {
+    switch (token->kind) {
+        case TK_IDENT:
+        case TK_NUM:
+        case TK_EOF: {
+            return false;
+        }
+        case TK_RESERVED:
+        case TK_RETURN:
+        case TK_IF:
+        case TK_ELSE: {
+            break;
+        }
+        default: {
+            error_at(token->str, "Unknown Token");
+        }
+    }
+
+    if (strlen(op) != token->len || memcmp(token->str, op, token->len)) {
         return false;
     }
     token = token->next;
@@ -83,16 +99,28 @@ void program() {
     code[i] = NULL;
 }
 
-// stmt = expr ";" | "return" expr ";"
+// stmt = expr ";"
+//      | "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 Node *stmt() {
     Node *node;
     if (consume("return")) {
         node = new_node(ND_RETURN);
         node->lhs = expr();
+        expect(";");
+    } else if (consume("if")) {
+        consume("(");
+        node = new_node(ND_IF);
+        node->cond = expr();
+        consume(")");
+        node->then = stmt();
+        if (consume("else")) {
+            node->els = stmt();
+        }
     } else {
         node = expr();
+        expect(";");
     }
-    expect(";");
     return node;
 }
 

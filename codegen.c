@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+int jump_label_counts = 0;
+
 void gen_lval(Node *node) {
     if (node->kind != ND_LVAR) {
         error("代入の左辺値が変数ではありません");
@@ -11,23 +13,26 @@ void gen_lval(Node *node) {
 
 void gen(Node *node) {
     switch (node->kind) {
-        case ND_RETURN:
+        case ND_RETURN: {
             gen(node->lhs);
             printf("    pop rax\n");
             printf("    mov rsp, rbp\n");
             printf("    pop rbp\n");
             printf("    ret\n");
             return;
-        case ND_NUM:
+        }
+        case ND_NUM: {
             printf("    push %d\n", node->val);
             return;
-        case ND_LVAR:
+        }
+        case ND_LVAR: {
             gen_lval(node);
             printf("    pop rax\n");
             printf("    mov rax, [rax]\n");
             printf("    push rax\n");
             return;
-        case ND_ASSIGN:
+        }
+        case ND_ASSIGN: {
             gen_lval(node->lhs);
             gen(node->rhs);
             printf("    pop rdi\n");
@@ -35,6 +40,29 @@ void gen(Node *node) {
             printf("    mov [rax], rdi\n");
             printf("    push rdi\n");
             return;
+        }
+        case ND_IF: {
+            int current_counts = jump_label_counts++;
+            if (node->els) {
+                gen(node->cond);
+                printf("    pop rax\n");
+                printf("    cmp rax, 0\n");  // FALSE = 0, TRUE = その他,
+                printf("    je  .Lelse%d\n", current_counts);
+                gen(node->then);
+                printf("    jmp .Lend%d\n", current_counts);
+                printf(".Lelse%d:\n", current_counts);
+                gen(node->els);
+                printf(".Lend%d:\n", current_counts);
+            } else {
+                gen(node->cond);
+                printf("    pop rax\n");
+                printf("    cmp rax, 0\n");
+                printf("    je  .Lend%d\n", current_counts);
+                gen(node->then);
+                printf(".Lend%d:\n", current_counts);
+            }
+            return;
+        }
     }
 
     gen(node->lhs);

@@ -41,6 +41,11 @@ bool is_lval_char(char c) {
     return is_lval_initial(c) || ('0' <= c && c <= '9');
 }
 
+bool is_keyword_of(char *p, char *keyword) {
+    int length = strlen(keyword);
+    return strncmp(p, keyword, length) == 0 && !is_lval_char(p[length]);
+}
+
 Token *tokenize(char *p) {
     Token head;
     head.next = NULL;
@@ -72,9 +77,21 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        if (strncmp(p, "return", 6) == 0 && !is_lval_char(p[6])) {
+        if (is_keyword_of(p, "return")) {
             cur = new_token(TK_RETURN, cur, p, 6);
             p += 6;
+            continue;
+        }
+
+        if (is_keyword_of(p, "if")) {
+            cur = new_token(TK_IF, cur, p, 2);
+            p += 2;
+            continue;
+        }
+
+        if (is_keyword_of(p, "else")) {
+            cur = new_token(TK_ELSE, cur, p, 4);
+            p += 4;
             continue;
         }
 
