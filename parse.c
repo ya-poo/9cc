@@ -13,7 +13,8 @@ bool consume(char *op) {
         case TK_RETURN:
         case TK_IF:
         case TK_ELSE:
-        case TK_WHILE: {
+        case TK_WHILE:
+        case TK_FOR: {
             break;
         }
         default: {
@@ -103,6 +104,7 @@ void program() {
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | expr ";"
 Node *stmt() {
     Node *node;
@@ -130,6 +132,25 @@ Node *stmt() {
         consume("(");
         node->cond = expr();
         consume(")");
+        node->then = stmt();
+        return node;
+    }
+
+    if (consume("for")) {
+        node = new_node(ND_FOR);
+        expect("(");
+        if (!consume(";")) {
+            node->init = expr();
+            expect(";");
+        }
+        if (!consume(";")) {
+            node->cond = expr();
+            expect(";");
+        }
+        if (!consume(")")) {
+            node->inc = expr();
+            expect(")");
+        }
         node->then = stmt();
         return node;
     }

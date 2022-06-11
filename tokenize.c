@@ -101,6 +101,12 @@ Token *tokenize(char *p) {
             continue;
         }
 
+        if (is_keyword_of(p, "for")) {
+            cur = new_token(TK_FOR, cur, p, 3);
+            p += 3;
+            continue;
+        }
+
         if (is_lval_initial(*p)) {
             int length = 0;
             while (is_lval_char(*(p + length))) {
