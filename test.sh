@@ -75,4 +75,16 @@ for(i=1; i<=10; i=i+1)
     sum = sum + i;
 return sum;"
 
+assert 3 '{1; {2;} return 3;}'
+assert 55 'i=0; j=0; while(i<=10) {j=i+j; i=i+1;} return j;'
+assert 233 "i = 1;
+j = 1;
+z = 0;
+for(n=3; n<=13; n=n+1) {
+    z = i + j;
+    i = j;
+    j = z;
+}
+return z;"
+
 echo OK

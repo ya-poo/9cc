@@ -90,6 +90,7 @@ void program() {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "{" stmt* "}"
 //      | expr ";"
 Node *stmt() {
     Node *node;
@@ -137,6 +138,20 @@ Node *stmt() {
             expect(")");
         }
         node->then = stmt();
+        return node;
+    }
+
+    if (consume("{")) {
+        Node head;
+        head.next = NULL;
+        Node *cur = &head;
+        while (!consume("}")) {
+            cur->next = stmt();
+            cur = cur->next;
+        }
+
+        node = new_node(ND_BLOCK);
+        node->next = head.next;
         return node;
     }
 
