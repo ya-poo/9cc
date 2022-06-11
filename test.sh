@@ -1,10 +1,15 @@
 #!/bin/bash
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() { return 3; }
+int ret5() { return 5; }
+EOF
+
 assert() {
     expected="$1"
     input="$2"
 
     ./9cc "$input" >tmp.s
-    cc -o tmp tmp.s
+    cc -o tmp tmp.s tmp2.o
     ./tmp
     actual="$?"
 
@@ -86,5 +91,8 @@ for(n=3; n<=13; n=n+1) {
     j = z;
 }
 return z;"
+
+assert 3 'return ret3();'
+assert 9 'a = 4; return a + ret5();'
 
 echo OK

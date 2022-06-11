@@ -256,7 +256,10 @@ LVar *find_lvar(Token *tok) {
     return NULL;
 }
 
-// primary = num | ident |"(" expr ")"
+// primary = "(" expr ")"
+//         | ident args?
+//         | num
+// args = "(" ")"
 Node *primary() {
     if (consume("(")) {
         Node *node = expr();
@@ -266,25 +269,33 @@ Node *primary() {
 
     Token *ident_token = consume_ident();
     if (ident_token) {
-        Node *node = new_node(ND_LVAR);
-
-        LVar *lvar = find_lvar(ident_token);
-        if (lvar) {
-            node->offset = lvar->offset;
+        if (consume("(")) {
+            expect(")");
+            Node *node = new_node(ND_FUNCALL);
+            node->funcname = strndup(ident_token->str, ident_token->len);
+            return node;
         } else {
-            lvar = calloc(1, sizeof(LVar));
-            if (locals) {
-                lvar->next = locals;
-                lvar->offset = locals->offset + 8;
+            Node *node = new_node(ND_LVAR);
+
+            LVar *lvar = find_lvar(ident_token);
+            if (lvar) {
+                node->offset = lvar->offset;
             } else {
-                lvar->offset = 8;
+                lvar = calloc(1, sizeof(LVar));
+                if (locals) {
+                    lvar->next = locals;
+                    lvar->offset = locals->offset + 8;
+                } else {
+                    lvar->offset = 8;
+                }
+                lvar->name = ident_token->str;
+                lvar->len = ident_token->len;
+                node->offset = lvar->offset;
+                locals = lvar;
             }
-            lvar->name = ident_token->str;
-            lvar->len = ident_token->len;
-            node->offset = lvar->offset;
-            locals = lvar;
+
+            return node;
         }
-        return node;
     }
     return new_num(expect_number());
 }

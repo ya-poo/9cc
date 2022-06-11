@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -41,22 +42,23 @@ struct LVar {
 void error_at(char *loc, char *fmt, ...);
 
 typedef enum {
-    ND_ADD,     // +
-    ND_SUB,     // -
-    ND_MUL,     // *
-    ND_DIV,     // /
-    ND_EQ,      // ==
-    ND_NE,      // !=
-    ND_LT,      // <
-    ND_LE,      // <=
-    ND_ASSIGN,  // =
-    ND_LVAR,    // local variable
-    ND_RETURN,  // return
-    ND_IF,      // if
-    ND_ELSE,    // else
-    ND_WHILE,   // while
-    ND_FOR,     // for
-    ND_BLOCK,   // { ... }
+    ND_ADD,      // +
+    ND_SUB,      // -
+    ND_MUL,      // *
+    ND_DIV,      // /
+    ND_EQ,       // ==
+    ND_NE,       // !=
+    ND_LT,       // <
+    ND_LE,       // <=
+    ND_ASSIGN,   // =
+    ND_LVAR,     // local variable
+    ND_RETURN,   // return
+    ND_IF,       // if
+    ND_ELSE,     // else
+    ND_WHILE,    // while
+    ND_FOR,      // for
+    ND_BLOCK,    // { ... }
+    ND_FUNCALL,  // call function
     ND_NUM,
 } NodeKind;
 
@@ -70,6 +72,8 @@ struct Node {
     int offset;  // Used if kind == ND_LVAR
 
     Node *next;  // Used if kind == ND_BLOCK
+
+    char *funcname;  // Used if kind == ND_FUNCALL
 
     // if (A) B else C
     // while(A) B
