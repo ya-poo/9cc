@@ -75,6 +75,7 @@ Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
+Node *func_args_or_null();
 Node *primary();
 
 // program = stmt *
@@ -256,10 +257,28 @@ LVar *find_lvar(Token *tok) {
     return NULL;
 }
 
+// func-args = "(" (assign ("," assign)* )? ")"
+Node *func_args_or_null() {
+    // 最初の "(" を consume した後に呼ぶ
+    if (consume(")")) {
+        return NULL;
+    }
+
+    Node *head = assign();
+    Node *cur = head;
+    while (consume(",")) {
+        cur->next = assign();
+        cur = cur->next;
+    }
+    expect(")");
+
+    return head;
+}
+
 // primary = "(" expr ")"
-//         | ident args?
+//         | ident func-args
+//         | ident
 //         | num
-// args = "(" ")"
 Node *primary() {
     if (consume("(")) {
         Node *node = expr();
@@ -270,9 +289,10 @@ Node *primary() {
     Token *ident_token = consume_ident();
     if (ident_token) {
         if (consume("(")) {
-            expect(")");
             Node *node = new_node(ND_FUNCALL);
+            Node *func_args = func_args_or_null();
             node->funcname = strndup(ident_token->str, ident_token->len);
+            node->args = func_args;
             return node;
         } else {
             Node *node = new_node(ND_LVAR);

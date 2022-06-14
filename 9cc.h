@@ -59,6 +59,7 @@ typedef enum {
     ND_FOR,      // for
     ND_BLOCK,    // { ... }
     ND_FUNCALL,  // call function
+    ND_FUNC,     // function
     ND_NUM,
 } NodeKind;
 
@@ -68,12 +69,15 @@ struct Node {
     NodeKind kind;
     Node *lhs;
     Node *rhs;
+
     int val;     // Used if kind == ND_NUM
     int offset;  // Used if kind == ND_LVAR
 
     Node *next;  // Used if kind == ND_BLOCK
 
-    char *funcname;  // Used if kind == ND_FUNCALL
+    // Used if kind == ND_FUNCALL
+    char *funcname;
+    Node *args;
 
     // if (A) B else C
     // while(A) B

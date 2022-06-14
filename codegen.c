@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 int jump_label_counts = 0;
+char *funarg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen_lval(Node *node) {
     if (node->kind != ND_LVAR) {
@@ -96,6 +97,14 @@ void gen(Node *node) {
             return;
         }
         case ND_FUNCALL: {
+            int args = 0;
+            for (Node *arg = node->args; arg; arg = arg->next) {
+                gen(arg);
+                args++;
+            }
+            for (int i = args - 1; i >= 0; i--) {
+                printf("    pop %s\n", funarg_regs[i]);
+            }
             printf("    call %s\n", node->funcname);
             printf("    push rax\n");
             return;
