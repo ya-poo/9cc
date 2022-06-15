@@ -105,7 +105,23 @@ void gen(Node *node) {
             for (int i = args - 1; i >= 0; i--) {
                 printf("    pop %s\n", funarg_regs[i]);
             }
+
+            // RSP を 16 の倍数にする
+            int current_counts = jump_label_counts++;
+            printf("    mov rax, rsp\n");
+            printf("    and rax, 15\n");
+            printf("    jnz .Lcall%d\n", current_counts);
+            printf("    mov rax, 0\n");
             printf("    call %s\n", node->funcname);
+            printf("    jmp .Lend%d\n", current_counts);
+
+            printf(".Lcall%d:\n", current_counts);
+            printf("    sub rsp, 8\n");
+            printf("    mov rax, 0\n");
+            printf("    call %s\n", node->funcname);
+            printf("    add rsp, 8\n");
+
+            printf(".Lend%d:\n", current_counts);
             printf("    push rax\n");
             return;
         }
