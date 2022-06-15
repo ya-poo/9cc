@@ -26,14 +26,14 @@ struct Token {
     int len;
 };
 
-typedef struct LVar LVar;
+typedef struct Var Var;
 
 //
 // parse.c
 //
-struct LVar {
+struct Var {
     // ローカル変数
-    LVar *next;  // 次の変数
+    Var *next;   // 次の変数
     char *name;  // 変数名
     int len;     // 名前の長さ
     int offset;  // RBPからのオフセット
@@ -51,7 +51,7 @@ typedef enum {
     ND_LT,       // <
     ND_LE,       // <=
     ND_ASSIGN,   // =
-    ND_LVAR,     // local variable
+    ND_VAR,      // variable
     ND_RETURN,   // return
     ND_IF,       // if
     ND_ELSE,     // else
@@ -71,7 +71,7 @@ struct Node {
     Node *rhs;
 
     int val;     // Used if kind == ND_NUM
-    int offset;  // Used if kind == ND_LVAR
+    int offset;  // Used if kind == ND_VAR
 
     Node *next;  // Used if kind == ND_BLOCK
 
@@ -104,4 +104,4 @@ void codegen();
 extern char *user_input;
 extern Token *token;
 extern Node *code[100];
-extern LVar *locals;
+extern Var *locals;

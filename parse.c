@@ -248,8 +248,8 @@ Node *unary() {
     return primary();
 }
 
-LVar *find_lvar(Token *tok) {
-    for (LVar *var = locals; var; var = var->next) {
+Var *find_var(Token *tok) {
+    for (Var *var = locals; var; var = var->next) {
         if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
             return var;
         }
@@ -295,23 +295,23 @@ Node *primary() {
             node->args = func_args;
             return node;
         } else {
-            Node *node = new_node(ND_LVAR);
+            Node *node = new_node(ND_VAR);
 
-            LVar *lvar = find_lvar(ident_token);
-            if (lvar) {
-                node->offset = lvar->offset;
+            Var *var = find_var(ident_token);
+            if (var) {
+                node->offset = var->offset;
             } else {
-                lvar = calloc(1, sizeof(LVar));
+                var = calloc(1, sizeof(Var));
                 if (locals) {
-                    lvar->next = locals;
-                    lvar->offset = locals->offset + 8;
+                    var->next = locals;
+                    var->offset = locals->offset + 8;
                 } else {
-                    lvar->offset = 8;
+                    var->offset = 8;
                 }
-                lvar->name = ident_token->str;
-                lvar->len = ident_token->len;
-                node->offset = lvar->offset;
-                locals = lvar;
+                var->name = ident_token->str;
+                var->len = ident_token->len;
+                node->offset = var->offset;
+                locals = var;
             }
 
             return node;
