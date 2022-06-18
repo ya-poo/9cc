@@ -112,4 +112,3 @@ void codegen(Function *functions);
 //
 extern char *user_input;
 extern Token *token;
-extern Var *locals;

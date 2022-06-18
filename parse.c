@@ -102,6 +102,8 @@ Function *program() {
     return head.next;
 }
 
+Function *current;
+
 // function = ident "(" ")" "{" stmt* "}"
 Function *function() {
     char *ident = expect_ident();
@@ -112,15 +114,18 @@ Function *function() {
     Node head;
     head.next = NULL;
     Node *cur = &head;
+
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = ident;
+    fn->locals = NULL;
+    current = fn;
+
     while (!consume("}")) {
         cur->next = stmt();
         cur = cur->next;
     }
 
-    Function *fn = calloc(1, sizeof(Function));
-    fn->name = ident;
     fn->node = head.next;
-    fn->locals = NULL;
     return fn;
 }
 
@@ -286,7 +291,7 @@ Node *unary() {
 }
 
 Var *find_var(Token *tok) {
-    for (Var *var = locals; var; var = var->next) {
+    for (Var *var = current->locals; var; var = var->next) {
         if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
             return var;
         }
@@ -339,16 +344,16 @@ Node *primary() {
                 node->offset = var->offset;
             } else {
                 var = calloc(1, sizeof(Var));
-                if (locals) {
-                    var->next = locals;
-                    var->offset = locals->offset + 8;
+                if (current->locals) {
+                    var->next = current->locals;
+                    var->offset = current->locals->offset + 8;
                 } else {
                     var->offset = 8;
                 }
                 var->name = ident_token->str;
                 var->len = ident_token->len;
                 node->offset = var->offset;
-                locals = var;
+                current->locals = var;
             }
 
             return node;
