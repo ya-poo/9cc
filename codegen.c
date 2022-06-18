@@ -171,30 +171,35 @@ void gen(Node *node) {
     printf("    push rax\n");
 }
 
-int get_lval_space() {
-    if (!locals) {
+int get_lval_space(Function *func) {
+    if (!func->locals) {
         return 0;
     }
-    return locals->offset;
+    return func->locals->offset;
 }
 
-void codegen() {
-    printf(".intel_syntax noprefix\n");
-    printf(".globl main\n");
-    printf("main:\n");
+void gen_func(Function *func) {
+    printf(".globl %s\n", func->name);
+    printf("%s:\n", func->name);
 
     // Prologue
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", get_lval_space());
+    printf("    sub rsp, %d\n", get_lval_space(func));
 
-    for (int i = 0; code[i]; i++) {
-        gen(code[i]);
-        printf("    pop rax\n");
+    for (Node *node = func->node; node; node = node->next) {
+        gen(node);
     }
 
     // Epilogue
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");
+}
+
+void codegen(Function *functions) {
+    printf(".intel_syntax noprefix\n");
+    for (Function *fun = functions; fun; fun = fun->next) {
+        gen_func(fun);
+    }
 }

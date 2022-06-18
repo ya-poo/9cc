@@ -15,10 +15,10 @@ bool consume(char *op) {
 }
 
 // 次のトークンが ND_IDENT の場合は 1 つ読み進めてその ND_IDENT
-// のトークンを返す。 それ以外の場合は 0 を返す。
+// のトークンを返す。
 Token *consume_ident() {
     if (token->kind != TK_IDENT) {
-        return 0;
+        return NULL;
     }
     Token *ident_token = token;
     token = token->next;
@@ -46,6 +46,16 @@ int expect_number() {
     return val;
 }
 
+// 次のトークンが ND_IDENT の場合は 1 つ読み進めてその ident を返す。
+// それ以外の場合はエラーを報告する。
+char *expect_ident() {
+    Token *ident = consume_ident();
+    if (!ident) {
+        error_at(token->str, "識別子ではありません");
+    }
+    return strndup(ident->str, ident->len);
+}
+
 bool at_eof() { return token->kind == TK_EOF; }
 
 Node *new_node(NodeKind kind) {
@@ -67,6 +77,7 @@ Node *new_num(int val) {
     return node;
 }
 
+Function *function();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -78,13 +89,39 @@ Node *unary();
 Node *func_args_or_null();
 Node *primary();
 
-// program = stmt *
-void program() {
-    int i = 0;
+// program = function*
+Function *program() {
+    Function head;
+    head.next = NULL;
+    Function *cur = &head;
+
     while (!at_eof()) {
-        code[i++] = stmt();
+        cur->next = function();
+        cur = cur->next;
     }
-    code[i] = NULL;
+    return head.next;
+}
+
+// function = ident "(" ")" "{" stmt* "}"
+Function *function() {
+    char *ident = expect_ident();
+    expect("(");
+    expect(")");
+    expect("{");
+
+    Node head;
+    head.next = NULL;
+    Node *cur = &head;
+    while (!consume("}")) {
+        cur->next = stmt();
+        cur = cur->next;
+    }
+
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = ident;
+    fn->node = head.next;
+    fn->locals = NULL;
+    return fn;
 }
 
 // stmt = "return" expr ";"

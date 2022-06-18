@@ -89,19 +89,27 @@ struct Node {
     Node *inc;   // E
 };
 
+typedef struct Function Function;
+struct Function {
+    Function *next;
+    char *name;
+    Node *node;
+    Var *locals;
+    int stack_size;
+};
+
 Token *tokenize(char *p);
-void program();
+Function *program();
 void error(char *fmt, ...);
 
 //
 // codegen.c
 //
-void codegen();
+void codegen(Function *functions);
 
 //
 // global
 //
 extern char *user_input;
 extern Token *token;
-extern Node *code[100];
 extern Var *locals;
