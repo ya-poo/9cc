@@ -94,7 +94,8 @@ struct Function {
     Function *next;
     char *name;
     Node *node;
-    Var *locals;
+    Var *locals;  // ローカル変数
+    Var *params;    // 引数
     int stack_size;
 };
 

@@ -179,7 +179,7 @@ int get_lval_space(Function *func) {
 }
 
 void gen_func(Function *func) {
-    printf(".globl %s\n", func->name);
+    printf(".global %s\n", func->name);
     printf("%s:\n", func->name);
 
     // Prologue
@@ -187,11 +187,18 @@ void gen_func(Function *func) {
     printf("    mov rbp, rsp\n");
     printf("    sub rsp, %d\n", get_lval_space(func));
 
+    // function params
+    int args = 0;
+    for (Var *var = func->params; var; var = var->next) {
+        printf("    mov [rbp-%d], %s\n", var->offset, funarg_regs[args++]);
+    }
+
     for (Node *node = func->node; node; node = node->next) {
         gen(node);
     }
 
     // Epilogue
+    printf(".Lreturn.%s:\n", func->name);
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
     printf("    ret\n");

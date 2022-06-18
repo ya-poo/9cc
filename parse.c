@@ -89,6 +89,8 @@ Node *unary();
 Node *func_args_or_null();
 Node *primary();
 
+Function *current;
+
 // program = function*
 Function *program() {
     Function head;
@@ -102,22 +104,47 @@ Function *program() {
     return head.next;
 }
 
-Function *current;
+Var *new_var(int offset) {
+    Var *var = calloc(1, sizeof(Var));
+    var->name = expect_ident();
+    var->len = strlen(var->name);
+    var->offset = offset;
 
-// function = ident "(" ")" "{" stmt* "}"
-Function *function() {
-    char *ident = expect_ident();
+    return var;
+}
+
+// func-params = "(" (ident ("," ident)*)? ")"
+Var *func_params() {
     expect("(");
-    expect(")");
+
+    Var head;
+    head.next = NULL;
+    Var *cur = &head;
+
+    if (!consume(")")) {
+        cur->next = new_var(8);
+        cur = cur->next;
+        while (consume(",")) {
+            cur->next = new_var(cur->offset + 8);
+            cur = cur->next;
+        }
+        consume(")");
+    }
+    return head.next;
+}
+
+// function = ident func-args "{" stmt* "}"
+Function *function() {
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = expect_ident();
+    fn->params = func_params();
+
     expect("{");
 
     Node head;
     head.next = NULL;
     Node *cur = &head;
 
-    Function *fn = calloc(1, sizeof(Function));
-    fn->name = ident;
-    fn->locals = NULL;
     current = fn;
 
     while (!consume("}")) {
