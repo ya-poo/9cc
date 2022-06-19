@@ -60,6 +60,8 @@ typedef enum {
     ND_BLOCK,    // { ... }
     ND_FUNCALL,  // call function
     ND_FUNC,     // function
+    ND_DEREF,    // dereference
+    ND_ADDR,     // address
     ND_NUM,
 } NodeKind;
 
@@ -95,7 +97,7 @@ struct Function {
     char *name;
     Node *node;
     Var *locals;  // ローカル変数
-    Var *params;    // 引数
+    Var *params;  // 引数
     int stack_size;
 };
 

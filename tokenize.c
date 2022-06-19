@@ -44,7 +44,7 @@ bool is_lval_char(char c) {
 static char *keywords[] = {"return", "if", "else", "while", "for"};
 static char *operators[] = {"==", "!=", "<=", ">="};
 static char *symbols[] = {"+", "-", "*", "/", "(", ")", "<",
-                          ">", ";", "=", "{", "}", ","};
+                          ">", ";", "=", "{", "}", ",", "&"};
 char *get_reserved(char *p) {
     for (int i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
         int length = strlen(keywords[i]);

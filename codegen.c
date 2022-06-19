@@ -3,6 +3,8 @@
 int jump_label_counts = 0;
 char *funarg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+void gen(Node *node);
+
 void gen_lval(Node *node) {
     if (node->kind != ND_VAR) {
         error("代入の左辺値が変数ではありません");
@@ -10,6 +12,20 @@ void gen_lval(Node *node) {
     printf("    mov rax, rbp\n");
     printf("    sub rax, %d\n", node->offset);
     printf("    push rax\n");
+}
+
+void gen_addr(Node *node) {
+    switch (node->kind) {
+        case ND_VAR: {
+            gen_lval(node);
+            return;
+        }
+        case ND_DEREF: {
+            gen(node->lhs);
+            return;
+        }
+    }
+    error("アドレス値ではありません");
 }
 
 void gen(Node *node) {
@@ -34,12 +50,23 @@ void gen(Node *node) {
             return;
         }
         case ND_ASSIGN: {
-            gen_lval(node->lhs);
+            gen_addr(node->lhs);
             gen(node->rhs);
             printf("    pop rdi\n");
             printf("    pop rax\n");
             printf("    mov [rax], rdi\n");
             printf("    push rdi\n");
+            return;
+        }
+        case ND_ADDR: {
+            gen_addr(node->lhs);
+            return;
+        }
+        case ND_DEREF: {
+            gen(node->lhs);
+            printf("    pop rax\n");
+            printf("    mov rax, [rax]\n");
+            printf("    push rax\n");
             return;
         }
         case ND_IF: {
@@ -178,35 +205,31 @@ int get_lval_space(Function *func) {
     return func->locals->offset;
 }
 
-void gen_func(Function *func) {
-    printf(".global %s\n", func->name);
-    printf("%s:\n", func->name);
-
-    // Prologue
-    printf("    push rbp\n");
-    printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", get_lval_space(func));
-
-    // function params
-    int args = 0;
-    for (Var *var = func->params; var; var = var->next) {
-        printf("    mov [rbp-%d], %s\n", var->offset, funarg_regs[args++]);
-    }
-
-    for (Node *node = func->node; node; node = node->next) {
-        gen(node);
-    }
-
-    // Epilogue
-    printf(".Lreturn.%s:\n", func->name);
-    printf("    mov rsp, rbp\n");
-    printf("    pop rbp\n");
-    printf("    ret\n");
-}
-
 void codegen(Function *functions) {
     printf(".intel_syntax noprefix\n");
     for (Function *fun = functions; fun; fun = fun->next) {
-        gen_func(fun);
+        printf(".global %s\n", fun->name);
+        printf("%s:\n", fun->name);
+
+        // Prologue
+        printf("    push rbp\n");
+        printf("    mov rbp, rsp\n");
+        printf("    sub rsp, %d\n", get_lval_space(fun));
+
+        // function params
+        int args = 0;
+        for (Var *var = fun->params; var; var = var->next) {
+            printf("    mov [rbp-%d], %s\n", var->offset, funarg_regs[args++]);
+        }
+
+        for (Node *node = fun->node; node; node = node->next) {
+            gen(node);
+        }
+
+        // Epilogue
+        printf(".Lreturn.%s:\n", fun->name);
+        printf("    mov rsp, rbp\n");
+        printf("    pop rbp\n");
+        printf("    ret\n");
     }
 }
