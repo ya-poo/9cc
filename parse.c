@@ -145,13 +145,17 @@ void param_var() {
     }
     var->len = strlen(var->name);
 
-    if (current_function->params) {
-        var->next = current_function->params;
-        var->offset = current_function->params->offset + 8;
-    } else {
+    Var *cur = current_function->params;
+    if (!cur) {
+        current_function->params = var;
         var->offset = 8;
+    } else {
+        while (cur->next) {
+            cur = cur->next;
+        }
+        cur->next = var;
+        var->offset = cur->offset + 8;
     }
-    current_function->params = var;
 }
 
 // var = basetype ident
@@ -164,13 +168,17 @@ void local_var() {
     }
     var->len = strlen(var->name);
 
-    if (current_function->locals) {
-        var->next = current_function->locals;
-        var->offset = current_function->locals->offset + 8;
-    } else {
+    Var *cur = current_function->locals;
+    if (!cur) {
+        current_function->locals = var;
         var->offset = 8;
+    } else {
+        while (cur->next) {
+            cur = cur->next;
+        }
+        cur->next = var;
+        var->offset = cur->offset + 8;
     }
-    current_function->locals = var;
 }
 
 // func-params = "(" (var ("," var)*)? ")"

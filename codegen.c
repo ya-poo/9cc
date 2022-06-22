@@ -205,7 +205,11 @@ int get_lval_space(Function *func) {
     if (!func->params) {
         return 0;
     }
-    return func->params->offset;
+    Var *cur = func->params;
+    while (cur->next) {
+        cur = cur->next;
+    }
+    return cur->offset;
 }
 
 void codegen(Function *functions) {
