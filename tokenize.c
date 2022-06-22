@@ -41,7 +41,7 @@ bool is_lval_char(char c) {
     return is_lval_initial(c) || ('0' <= c && c <= '9');
 }
 
-static char *keywords[] = {"return", "if", "else", "while", "for"};
+static char *keywords[] = {"return", "if", "else", "while", "for", "int"};
 static char *operators[] = {"==", "!=", "<=", ">="};
 static char *symbols[] = {"+", "-", "*", "/", "(", ")", "<",
                           ">", ";", "=", "{", "}", ",", "&"};

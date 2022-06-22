@@ -152,6 +152,9 @@ void gen(Node *node) {
             printf("    push rax\n");
             return;
         }
+        case ND_DECL: {
+            return;
+        }
     }
 
     gen(node->lhs);
@@ -199,10 +202,10 @@ void gen(Node *node) {
 }
 
 int get_lval_space(Function *func) {
-    if (!func->locals) {
+    if (!func->params) {
         return 0;
     }
-    return func->locals->offset;
+    return func->params->offset;
 }
 
 void codegen(Function *functions) {

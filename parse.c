@@ -25,6 +25,17 @@ Token *consume_ident() {
     return ident_token;
 }
 
+// 次のトークンが期待している記号のときには true を返す。
+// トークンは読み進めない。
+bool peek(char *s) {
+    if (token->kind != TK_RESERVED || strlen(s) != token->len ||
+        memcmp(token->str, s, token->len)) {
+        return false;
+    }
+
+    return true;
+}
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
 void expect(char *op) {
@@ -89,7 +100,7 @@ Node *unary();
 Node *func_args_or_null();
 Node *primary();
 
-Function *current;
+Function *current_function;
 
 // program = function*
 Function *program() {
@@ -104,17 +115,66 @@ Function *program() {
     return head.next;
 }
 
-Var *new_var(int offset) {
-    Var *var = calloc(1, sizeof(Var));
-    var->name = expect_ident();
-    var->len = strlen(var->name);
-    var->offset = offset;
+Var *find_var(char *ident) {
+    for (Var *var = current_function->locals; var; var = var->next) {
+        if (var->len == strlen(ident) && !memcmp(var->name, ident, var->len)) {
+            return var;
+        }
+    }
+    for (Var *var = current_function->params; var; var = var->next) {
+        if (var->len == strlen(ident) && !memcmp(var->name, ident, var->len)) {
+            return var;
+        }
+    }
 
-    return var;
+    return NULL;
 }
 
-// func-params = "(" (ident ("," ident)*)? ")"
-Var *func_params() {
+// basetype = "int"
+TypeKind basetype() {
+    expect("int");
+    return TY_INT;
+}
+
+void param_var() {
+    Var *var = calloc(1, sizeof(Var));
+    var->type = basetype();
+    var->name = expect_ident();
+    if (find_var(var->name)) {
+        error_at(token->str, "定義済みの変数名と重複しています");
+    }
+    var->len = strlen(var->name);
+
+    if (current_function->params) {
+        var->next = current_function->params;
+        var->offset = current_function->params->offset + 8;
+    } else {
+        var->offset = 8;
+    }
+    current_function->params = var;
+}
+
+// var = basetype ident
+void local_var() {
+    Var *var = calloc(1, sizeof(Var));
+    var->type = basetype();
+    var->name = expect_ident();
+    if (find_var(var->name)) {
+        error_at(token->str, "定義済みの変数名と重複しています");
+    }
+    var->len = strlen(var->name);
+
+    if (current_function->locals) {
+        var->next = current_function->locals;
+        var->offset = current_function->locals->offset + 8;
+    } else {
+        var->offset = 8;
+    }
+    current_function->locals = var;
+}
+
+// func-params = "(" (var ("," var)*)? ")"
+void *func_params() {
     expect("(");
 
     Var head;
@@ -122,30 +182,29 @@ Var *func_params() {
     Var *cur = &head;
 
     if (!consume(")")) {
-        cur->next = new_var(8);
-        cur = cur->next;
+        param_var();
         while (consume(",")) {
-            cur->next = new_var(cur->offset + 8);
-            cur = cur->next;
+            param_var();
         }
-        consume(")");
+        expect(")");
     }
     return head.next;
 }
 
-// function = ident func-args "{" stmt* "}"
+// function = basetype ident func-args "{" stmt* "}"
 Function *function() {
     Function *fn = calloc(1, sizeof(Function));
+    current_function = fn;
+
+    fn->type = basetype();
     fn->name = expect_ident();
-    fn->params = func_params();
+    func_params();
 
     expect("{");
 
     Node head;
     head.next = NULL;
     Node *cur = &head;
-
-    current = fn;
 
     while (!consume("}")) {
         cur->next = stmt();
@@ -156,11 +215,20 @@ Function *function() {
     return fn;
 }
 
+// declaration = var ";"
+Node *declaration() {
+    local_var();
+    expect(";");
+
+    return new_node(ND_DECL);
+}
+
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "{" stmt* "}"
+//      | declaration
 //      | expr ";"
 Node *stmt() {
     Node *node;
@@ -223,6 +291,10 @@ Node *stmt() {
         node = new_node(ND_BLOCK);
         node->next = head.next;
         return node;
+    }
+
+    if (peek("int")) {
+        return declaration();
     }
 
     node = expr();
@@ -324,15 +396,6 @@ Node *unary() {
     return primary();
 }
 
-Var *find_var(Token *tok) {
-    for (Var *var = current->locals; var; var = var->next) {
-        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
-            return var;
-        }
-    }
-    return NULL;
-}
-
 // func-args = "(" (assign ("," assign)* )? ")"
 Node *func_args_or_null() {
     // 最初の "(" を consume した後に呼ぶ
@@ -372,24 +435,13 @@ Node *primary() {
             return node;
         } else {
             Node *node = new_node(ND_VAR);
+            char *ident_name = strndup(ident_token->str, ident_token->len);
 
-            Var *var = find_var(ident_token);
-            if (var) {
-                node->offset = var->offset;
-            } else {
-                var = calloc(1, sizeof(Var));
-                if (current->locals) {
-                    var->next = current->locals;
-                    var->offset = current->locals->offset + 8;
-                } else {
-                    var->offset = 8;
-                }
-                var->name = ident_token->str;
-                var->len = ident_token->len;
-                node->offset = var->offset;
-                current->locals = var;
+            Var *var = find_var(ident_name);
+            if (!var) {
+                error_at(token->str, "未定義の変数です");
             }
-
+            node->offset = var->offset;
             return node;
         }
     }

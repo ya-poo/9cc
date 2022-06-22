@@ -31,12 +31,18 @@ typedef struct Var Var;
 //
 // parse.c
 //
+
+typedef enum {
+    TY_INT,
+} TypeKind;
+
 struct Var {
-    // ローカル変数
-    Var *next;   // 次の変数
-    char *name;  // 変数名
-    int len;     // 名前の長さ
-    int offset;  // RBPからのオフセット
+    // 変数
+    Var *next;      // 次の変数
+    char *name;     // 変数名
+    int len;        // 名前の長さ
+    int offset;     // RBPからのオフセット
+    TypeKind type;  // 変数の型
 };
 
 void error_at(char *loc, char *fmt, ...);
@@ -62,6 +68,7 @@ typedef enum {
     ND_FUNC,     // function
     ND_DEREF,    // dereference
     ND_ADDR,     // address
+    ND_DECL,     // declaration
     ND_NUM,
 } NodeKind;
 
@@ -93,12 +100,13 @@ struct Node {
 
 typedef struct Function Function;
 struct Function {
-    Function *next;
-    char *name;
+    char *name;  // 関数名
     Node *node;
     Var *locals;  // ローカル変数
     Var *params;  // 引数
     int stack_size;
+    TypeKind type;   // 戻り値の型
+    Function *next;  // 次の関数
 };
 
 Token *tokenize(char *p);
