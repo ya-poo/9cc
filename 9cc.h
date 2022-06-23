@@ -38,11 +38,17 @@ typedef enum {
 
 struct Var {
     // 変数
-    Var *next;      // 次の変数
     char *name;     // 変数名
     int len;        // 名前の長さ
     int offset;     // RBPからのオフセット
     TypeKind type;  // 変数の型
+};
+
+typedef struct VarList VarList;
+
+struct VarList {
+    VarList *tail;
+    Var *head;
 };
 
 void error_at(char *loc, char *fmt, ...);
@@ -102,8 +108,8 @@ typedef struct Function Function;
 struct Function {
     char *name;  // 関数名
     Node *node;
-    Var *locals;  // ローカル変数
-    Var *params;  // 引数
+    VarList *locals;  // ローカル変数
+    VarList *params;  // 引数
     int stack_size;
     TypeKind type;   // 戻り値の型
     Function *next;  // 次の関数

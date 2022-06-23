@@ -115,15 +115,15 @@ Function *program() {
     return head.next;
 }
 
-Var *find_var(char *ident) {
-    for (Var *var = current_function->locals; var; var = var->next) {
-        if (var->len == strlen(ident) && !memcmp(var->name, ident, var->len)) {
-            return var;
+VarList *find_var(char *ident) {
+    for (VarList *list = current_function->locals; list; list = list->tail) {
+        if (list->head->len == strlen(ident) && !memcmp(list->head->name, ident, list->head->len)) {
+            return list;
         }
     }
-    for (Var *var = current_function->params; var; var = var->next) {
-        if (var->len == strlen(ident) && !memcmp(var->name, ident, var->len)) {
-            return var;
+    for (VarList *list = current_function->params; list; list = list->tail) {
+        if (list->head->len == strlen(ident) && !memcmp(list->head->name, ident, list->head->len)) {
+            return list;
         }
     }
 
@@ -136,7 +136,8 @@ TypeKind basetype() {
     return TY_INT;
 }
 
-void param_var() {
+// var = basetype ident
+Var *var() {
     Var *var = calloc(1, sizeof(Var));
     var->type = basetype();
     var->name = expect_ident();
@@ -145,39 +146,47 @@ void param_var() {
     }
     var->len = strlen(var->name);
 
-    Var *cur = current_function->params;
-    if (!cur) {
-        current_function->params = var;
-        var->offset = 8;
+    return var;
+}
+
+void *var_local() {
+    VarList *tail = calloc(1, sizeof(VarList));
+    tail->head = var();
+    tail->tail = NULL;
+
+    if (!current_function->locals) {
+        current_function->locals = tail;
+        tail->head->offset = 8;
     } else {
-        while (cur->next) {
-            cur = cur->next;
+        VarList *cur = current_function->locals;
+        while (cur->tail) {
+            cur = cur->tail;
         }
-        cur->next = var;
-        var->offset = cur->offset + 8;
+        cur->tail = tail;
+        tail->head->offset = cur->head->offset + 8;
     }
 }
 
-// var = basetype ident
-void local_var() {
-    Var *var = calloc(1, sizeof(Var));
-    var->type = basetype();
-    var->name = expect_ident();
-    if (find_var(var->name)) {
-        error_at(token->str, "定義済みの変数名と重複しています");
-    }
-    var->len = strlen(var->name);
+void *var_param() {
+    VarList *tail = calloc(1, sizeof(VarList));
+    tail->head = var();
+    tail->tail = NULL;
 
-    Var *cur = current_function->locals;
-    if (!cur) {
-        current_function->locals = var;
-        var->offset = 8;
+    if (!current_function->params) {
+        current_function->params = tail;
+        tail->head->offset = 8;
     } else {
-        while (cur->next) {
-            cur = cur->next;
+        VarList *cur = current_function->params;
+        int n_param = 1;
+        while (cur->tail) {
+            cur = cur->tail;
+            n_param++;
         }
-        cur->next = var;
-        var->offset = cur->offset + 8;
+        if (n_param >= 6) {
+            error_at(token->str, "関数の引数は 6 つ以上設定できません");
+        }
+        cur->tail = tail;
+        tail->head->offset = cur->head->offset + 8;
     }
 }
 
@@ -185,18 +194,13 @@ void local_var() {
 void *func_params() {
     expect("(");
 
-    Var head;
-    head.next = NULL;
-    Var *cur = &head;
-
     if (!consume(")")) {
-        param_var();
+        var_param();
         while (consume(",")) {
-            param_var();
+            var_param();
         }
         expect(")");
     }
-    return head.next;
 }
 
 // function = basetype ident func-args "{" stmt* "}"
@@ -225,7 +229,7 @@ Function *function() {
 
 // declaration = var ";"
 Node *declaration() {
-    local_var();
+    var_local();
     expect(";");
 
     return new_node(ND_DECL);
@@ -445,11 +449,11 @@ Node *primary() {
             Node *node = new_node(ND_VAR);
             char *ident_name = strndup(ident_token->str, ident_token->len);
 
-            Var *var = find_var(ident_name);
-            if (!var) {
+            VarList *list = find_var(ident_name);
+            if (!list) {
                 error_at(token->str, "未定義の変数です");
             }
-            node->offset = var->offset;
+            node->offset = list->head->offset;
             return node;
         }
     }

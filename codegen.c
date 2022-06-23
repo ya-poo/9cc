@@ -1,7 +1,7 @@
 #include "9cc.h"
 
 int jump_label_counts = 0;
-char *funarg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *param_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen(Node *node);
 
@@ -130,7 +130,7 @@ void gen(Node *node) {
                 args++;
             }
             for (int i = args - 1; i >= 0; i--) {
-                printf("    pop %s\n", funarg_regs[i]);
+                printf("    pop %s\n", param_regs[i]);
             }
 
             // RSP を 16 の倍数にする
@@ -205,11 +205,11 @@ int get_lval_space(Function *func) {
     if (!func->params) {
         return 0;
     }
-    Var *cur = func->params;
-    while (cur->next) {
-        cur = cur->next;
+    VarList *list = func->params;
+    while (list->tail) {
+        list = list->tail;
     }
-    return cur->offset;
+    return list->head->offset;
 }
 
 void codegen(Function *functions) {
@@ -225,8 +225,8 @@ void codegen(Function *functions) {
 
         // function params
         int args = 0;
-        for (Var *var = fun->params; var; var = var->next) {
-            printf("    mov [rbp-%d], %s\n", var->offset, funarg_regs[args++]);
+        for (VarList *list = fun->params; list; list = list->tail) {
+            printf("    mov [rbp-%d], %s\n", list->head->offset, param_regs[args++]);
         }
 
         for (Node *node = fun->node; node; node = node->next) {

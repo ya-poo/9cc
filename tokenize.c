@@ -37,14 +37,11 @@ bool is_lval_initial(char c) {
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
 }
 
-bool is_lval_char(char c) {
-    return is_lval_initial(c) || ('0' <= c && c <= '9');
-}
+bool is_lval_char(char c) { return is_lval_initial(c) || ('0' <= c && c <= '9'); }
 
 static char *keywords[] = {"return", "if", "else", "while", "for", "int"};
 static char *operators[] = {"==", "!=", "<=", ">="};
-static char *symbols[] = {"+", "-", "*", "/", "(", ")", "<",
-                          ">", ";", "=", "{", "}", ",", "&"};
+static char *symbols[] = {"+", "-", "*", "/", "(", ")", "<", ">", ";", "=", "{", "}", ",", "&"};
 char *get_reserved(char *p) {
     for (int i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
         int length = strlen(keywords[i]);
