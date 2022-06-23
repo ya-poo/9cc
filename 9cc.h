@@ -42,7 +42,6 @@ struct Type {
 struct Var {
     // 変数
     char *name;  // 変数名
-    int len;     // 名前の長さ
     int offset;  // RBPからのオフセット
     Type *type;  // 変数の型
 };

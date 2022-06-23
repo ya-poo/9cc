@@ -117,12 +117,12 @@ Function *program() {
 
 VarList *find_var(char *ident) {
     for (VarList *list = current_function->locals; list; list = list->tail) {
-        if (list->head->len == strlen(ident) && !memcmp(list->head->name, ident, list->head->len)) {
+        if (!strcmp(list->head->name, ident)) {
             return list;
         }
     }
     for (VarList *list = current_function->params; list; list = list->tail) {
-        if (list->head->len == strlen(ident) && !memcmp(list->head->name, ident, list->head->len)) {
+        if (!strcmp(list->head->name, ident)) {
             return list;
         }
     }
@@ -146,7 +146,6 @@ Var *var() {
     if (find_var(var->name)) {
         error_at(token->str, "定義済みの変数名と重複しています");
     }
-    var->len = strlen(var->name);
 
     return var;
 }
