@@ -32,16 +32,19 @@ typedef struct Var Var;
 // parse.c
 //
 
-typedef enum {
-    TY_INT,
-} TypeKind;
+typedef struct Type Type;
+
+struct Type {
+    enum { INT, PTR } kind;
+    struct Type *ptr_to;
+};
 
 struct Var {
     // 変数
-    char *name;     // 変数名
-    int len;        // 名前の長さ
-    int offset;     // RBPからのオフセット
-    TypeKind type;  // 変数の型
+    char *name;  // 変数名
+    int len;     // 名前の長さ
+    int offset;  // RBPからのオフセット
+    Type *type;  // 変数の型
 };
 
 typedef struct VarList VarList;
@@ -111,7 +114,7 @@ struct Function {
     VarList *locals;  // ローカル変数
     VarList *params;  // 引数
     int stack_size;
-    TypeKind type;   // 戻り値の型
+    Type *type;      // 戻り値の型
     Function *next;  // 次の関数
 };
 

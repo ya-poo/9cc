@@ -131,9 +131,11 @@ VarList *find_var(char *ident) {
 }
 
 // basetype = "int"
-TypeKind basetype() {
+Type *basetype() {
     expect("int");
-    return TY_INT;
+    Type *type = calloc(1, sizeof(Type));
+    type->kind = INT;
+    return type;
 }
 
 // var = basetype ident
