@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
         }
         fun->stack_size = offset;
     }
+
+    annotate_type(functions);
     codegen(functions);
     return 0;
 }

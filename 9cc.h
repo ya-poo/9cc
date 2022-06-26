@@ -35,7 +35,7 @@ typedef struct Var Var;
 typedef struct Type Type;
 
 struct Type {
-    enum { INT, PTR } kind;
+    enum { TY_INT, TY_PTR } kind;
     struct Type *ptr_to;
 };
 
@@ -87,6 +87,8 @@ struct Node {
     Node *lhs;
     Node *rhs;
 
+    Type *type;
+
     int val;  // Used if kind == ND_NUM
 
     Var *var;  // Used if kind == ND_VAR
@@ -126,6 +128,11 @@ void error(char *fmt, ...);
 // codegen.c
 //
 void codegen(Function *functions);
+
+//
+// type.c
+//
+void annotate_type(Function *functions);
 
 //
 // global

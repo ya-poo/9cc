@@ -140,7 +140,7 @@ Type *basetype() {
         cur->ptr_to = calloc(1, sizeof(Type));
         cur = cur->ptr_to;
     }
-    cur->kind = INT;
+    cur->kind = TY_INT;
 
     return head.ptr_to;
 }
