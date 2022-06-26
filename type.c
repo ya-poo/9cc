@@ -46,7 +46,7 @@ void visit(Node *node) {
         }
         case ND_ADD: {
             if (node->rhs->type->kind == TY_PTR && node->lhs->type->kind == TY_PTR) {
-                error("不正な計算です");
+                error_at(node->token->str, "不正な計算です");
             }
             if (node->rhs->type->kind == TY_PTR) {
                 Node *tmp = node->lhs;
@@ -58,7 +58,7 @@ void visit(Node *node) {
         }
         case ND_SUB: {
             if (node->rhs->type->kind == TY_PTR) {
-                error("不正な計算です");
+                error_at(node->token->str, "不正な計算です");
             }
             node->type = node->lhs->type;
             return;
@@ -73,7 +73,8 @@ void visit(Node *node) {
         }
         case ND_DEREF: {
             if (node->lhs->type->kind != TY_PTR) {
-                node->type = int_type();
+                node->type = node->lhs->type;
+                return;
             } else {
                 node->type = node->lhs->type->ptr_to;
                 return;

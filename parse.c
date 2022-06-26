@@ -72,6 +72,7 @@ bool at_eof() { return token->kind == TK_EOF; }
 Node *new_node(NodeKind kind) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = kind;
+    node->token = token;
     return node;
 }
 

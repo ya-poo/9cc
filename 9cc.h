@@ -89,6 +89,8 @@ struct Node {
 
     Type *type;
 
+    Token *token;
+
     int val;  // Used if kind == ND_NUM
 
     Var *var;  // Used if kind == ND_VAR
