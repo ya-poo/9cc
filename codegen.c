@@ -11,7 +11,7 @@ void gen_lval(Node *node) {
         error("代入の左辺値が変数ではありません");
     }
     printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n", node->offset);
+    printf("    sub rax, %d\n", node->var->offset);
     printf("    push rax\n");
 }
 
@@ -200,26 +200,6 @@ void gen(Node *node) {
     printf("    push rax\n");
 }
 
-int get_lval_space(Function *func) {
-    int offset = 0;
-    if (func->params) {
-        VarList *list = func->params;
-        while (list->tail) {
-            list = list->tail;
-        }
-        offset += list->head->offset;
-    }
-    if (func->locals) {
-        VarList *list = func->locals;
-        while (list->tail) {
-            list = list->tail;
-        }
-        offset += list->head->offset;
-    }
-
-    return offset;
-}
-
 void codegen(Function *functions) {
     printf(".intel_syntax noprefix\n");
     for (Function *fun = functions; fun; fun = fun->next) {
@@ -231,7 +211,7 @@ void codegen(Function *functions) {
         // Prologue
         printf("    push rbp\n");
         printf("    mov rbp, rsp\n");
-        printf("    sub rsp, %d\n", get_lval_space(fun));
+        printf("    sub rsp, %d\n", fun->stack_size);
 
         // function params
         int args = 0;

@@ -87,8 +87,9 @@ struct Node {
     Node *lhs;
     Node *rhs;
 
-    int val;     // Used if kind == ND_NUM
-    int offset;  // Used if kind == ND_VAR
+    int val;  // Used if kind == ND_NUM
+
+    Var *var;  // Used if kind == ND_VAR
 
     Node *next;  // Used if kind == ND_BLOCK
 

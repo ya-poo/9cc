@@ -158,57 +158,32 @@ Var *var() {
 }
 
 void *var_local() {
-    VarList *tail = calloc(1, sizeof(VarList));
-    tail->head = var();
-    tail->tail = NULL;
-
-    if (!current_function->locals) {
-        current_function->locals = tail;
-        tail->head->offset = 8;
-    } else {
-        VarList *cur = current_function->locals;
-        while (cur->tail) {
-            cur = cur->tail;
-        }
-        cur->tail = tail;
-        tail->head->offset = cur->head->offset + 8;
-    }
-}
-
-void *var_param() {
-    VarList *tail = calloc(1, sizeof(VarList));
-    tail->head = var();
-    tail->tail = NULL;
-
-    if (!current_function->params) {
-        current_function->params = tail;
-        tail->head->offset = 8;
-    } else {
-        VarList *cur = current_function->params;
-        int n_param = 1;
-        while (cur->tail) {
-            cur = cur->tail;
-            n_param++;
-        }
-        if (n_param >= 6) {
-            error_at(token->str, "関数の引数は 6 つ以上設定できません");
-        }
-        cur->tail = tail;
-        tail->head->offset = cur->head->offset + 8;
-    }
+    VarList *head = calloc(1, sizeof(VarList));
+    head->head = var();
+    head->tail = current_function->locals;
+    current_function->locals = head;
 }
 
 // func-params = "(" (var ("," var)*)? ")"
 void *func_params() {
     expect("(");
-
-    if (!consume(")")) {
-        var_param();
-        while (consume(",")) {
-            var_param();
-        }
-        expect(")");
+    if (consume(")")) {
+        return NULL;
     }
+
+    VarList *head = calloc(1, sizeof(VarList));
+    head->head = var();
+    VarList *cur = head;
+
+    while (!consume(")")) {
+        expect(",");
+        VarList *tail = calloc(1, sizeof(VarList));
+        cur->tail = tail;
+        tail->head = var();
+        cur = tail;
+    }
+
+    current_function->params = head;
 }
 
 // function = basetype ident func-args "{" stmt* "}"
@@ -461,7 +436,7 @@ Node *primary() {
             if (!list) {
                 error_at(token->str, "未定義の変数です");
             }
-            node->offset = list->head->offset;
+            node->var = list->head;
             return node;
         }
     }
