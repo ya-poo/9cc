@@ -113,6 +113,21 @@ Function *program() {
         cur->next = function();
         cur = cur->next;
     }
+
+    // Set offset of params / locals
+    for (Function *fun = head.next; fun; fun = fun->next) {
+        int offset = 0;
+        for (VarList *vl = fun->locals; vl; vl = vl->tail) {
+            offset += 8;
+            vl->head->offset = offset;
+        }
+        for (VarList *vl = fun->params; vl; vl = vl->tail) {
+            offset += 8;
+            vl->head->offset = offset;
+        }
+        fun->stack_size = offset;
+    }
+
     return head.next;
 }
 
