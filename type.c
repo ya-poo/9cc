@@ -1,5 +1,16 @@
 #include "9cc.h"
 
+int size_of(Type *type) {
+    switch (type->kind) {
+        case TY_INT: {
+            return 4;
+        }
+        case TY_PTR: {
+            return 8;
+        }
+    }
+}
+
 Type *int_type() {
     Type *type = calloc(1, sizeof(Type));
     type->kind = TY_INT;
@@ -79,6 +90,13 @@ void visit(Node *node) {
                 node->type = node->lhs->type->ptr_to;
                 return;
             }
+        }
+        case ND_SIZEOF: {
+            node->kind = ND_NUM;
+            node->type = int_type();
+            node->val = size_of(node->lhs->type);
+            node->lhs = NULL;
+            return;
         }
     }
 }

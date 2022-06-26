@@ -139,6 +139,7 @@ Type *basetype() {
     head.ptr_to = cur;
     while (consume("*")) {
         cur->ptr_to = calloc(1, sizeof(Type));
+        cur->kind = TY_PTR;
         cur = cur->ptr_to;
     }
     cur->kind = TY_INT;
@@ -375,6 +376,7 @@ Node *mul() {
 }
 
 // unary = ("+" | "-" | "*" | "&")? unary
+//       | "sizeof" unary
 //       | primary
 Node *unary() {
     if (consume("+")) {
@@ -388,6 +390,9 @@ Node *unary() {
     }
     if (consume("&")) {
         return new_binary(ND_ADDR, unary(), NULL);
+    }
+    if (consume("sizeof")) {
+        return new_binary(ND_SIZEOF, unary(), NULL);
     }
     return primary();
 }

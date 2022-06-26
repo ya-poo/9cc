@@ -77,6 +77,7 @@ typedef enum {
     ND_DEREF,    // dereference
     ND_ADDR,     // address
     ND_DECL,     // declaration
+    ND_SIZEOF,   // sizeof
     ND_NUM,
 } NodeKind;
 
