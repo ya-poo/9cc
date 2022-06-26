@@ -130,12 +130,19 @@ VarList *find_var(char *ident) {
     return NULL;
 }
 
-// basetype = "int"
+// basetype = "int" "*"*
 Type *basetype() {
     expect("int");
-    Type *type = calloc(1, sizeof(Type));
-    type->kind = INT;
-    return type;
+    Type head;
+    Type *cur = calloc(1, sizeof(Type));
+    head.ptr_to = cur;
+    while (consume("*")) {
+        cur->ptr_to = calloc(1, sizeof(Type));
+        cur = cur->ptr_to;
+    }
+    cur->kind = INT;
+
+    return head.ptr_to;
 }
 
 // var = basetype ident

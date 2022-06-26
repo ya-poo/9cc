@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 int jump_label_counts = 0;
+char *funcname;
 char *param_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen(Node *node);
@@ -33,9 +34,7 @@ void gen(Node *node) {
         case ND_RETURN: {
             gen(node->lhs);
             printf("    pop rax\n");
-            printf("    mov rsp, rbp\n");
-            printf("    pop rbp\n");
-            printf("    ret\n");
+            printf("    jmp .Lreturn.%s\n", funcname);
             return;
         }
         case ND_NUM: {
@@ -202,19 +201,30 @@ void gen(Node *node) {
 }
 
 int get_lval_space(Function *func) {
-    if (!func->params) {
-        return 0;
+    int offset = 0;
+    if (func->params) {
+        VarList *list = func->params;
+        while (list->tail) {
+            list = list->tail;
+        }
+        offset += list->head->offset;
     }
-    VarList *list = func->params;
-    while (list->tail) {
-        list = list->tail;
+    if (func->locals) {
+        VarList *list = func->locals;
+        while (list->tail) {
+            list = list->tail;
+        }
+        offset += list->head->offset;
     }
-    return list->head->offset;
+
+    return offset;
 }
 
 void codegen(Function *functions) {
     printf(".intel_syntax noprefix\n");
     for (Function *fun = functions; fun; fun = fun->next) {
+        funcname = fun->name;
+
         printf(".global %s\n", fun->name);
         printf("%s:\n", fun->name);
 
