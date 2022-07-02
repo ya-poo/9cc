@@ -108,8 +108,8 @@ void visit(Node *node) {
     }
 }
 
-void annotate_type(Function *functions) {
-    for (Function *fun = functions; fun; fun = fun->next) {
+void annotate_type(Program *program) {
+    for (Function *fun = program->functions; fun; fun = fun->next) {
         visit(fun->node);
     }
 }

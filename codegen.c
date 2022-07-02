@@ -211,9 +211,9 @@ void gen(Node *node) {
     printf("    push rax\n");
 }
 
-void codegen(Function *functions) {
+void codegen(Program *program) {
     printf(".intel_syntax noprefix\n");
-    for (Function *fun = functions; fun; fun = fun->next) {
+    for (Function *fun = program->functions; fun; fun = fun->next) {
         funcname = fun->name;
 
         printf(".global %s\n", fun->name);

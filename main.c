@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
 
     user_input = argv[1];
     token = tokenize(user_input);
-    Function *functions = program();
-    annotate_type(functions);
-    codegen(functions);
+    Program *prog = program();
+    annotate_type(prog);
+    codegen(prog);
     return 0;
 }

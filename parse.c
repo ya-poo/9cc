@@ -103,11 +103,12 @@ Node *primary();
 
 Function *current_function;
 
-// program = function*
-Function *program() {
+// program = (function | grobal-var)*
+Program *program() {
     Function head;
     head.next = NULL;
     Function *cur = &head;
+    VarList *global = calloc(1, sizeof(VarList));
 
     while (!at_eof()) {
         cur->next = function();
@@ -128,7 +129,11 @@ Function *program() {
         fun->stack_size = offset;
     }
 
-    return head.next;
+    Program *prog = calloc(1, sizeof(Program));
+    prog->functions = head.next;
+    prog->global = global;
+
+    return prog;
 }
 
 VarList *find_var(char *ident) {

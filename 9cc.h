@@ -127,20 +127,26 @@ struct Function {
     Function *next;  // 次の関数
 };
 
+typedef struct Program Program;
+struct Program {
+    VarList *global;  // グローバル変数
+    Function *functions;
+};
+
 Token *tokenize(char *p);
-Function *program();
+Program *program();
 void error(char *fmt, ...);
 
 //
 // codegen.c
 //
-void codegen(Function *functions);
+void codegen(Program *program);
 
 //
 // type.c
 //
 int size_of(Type *type);
-void annotate_type(Function *functions);
+void annotate_type(Program *program);
 
 //
 // global
