@@ -32,11 +32,15 @@ typedef struct Var Var;
 // parse.c
 //
 
+typedef enum { TY_INT, TY_PTR, TY_ARRAY } TypeKind;
+
 typedef struct Type Type;
 
 struct Type {
-    enum { TY_INT, TY_PTR } kind;
-    struct Type *ptr_to;
+    TypeKind kind;
+
+    struct Type *ptr_to;  // Used if kind == TY_PTR, TY_ARRAY
+    size_t array_size;    // Used if kind == TY_ARRAY
 };
 
 struct Var {
@@ -135,6 +139,7 @@ void codegen(Function *functions);
 //
 // type.c
 //
+int size_of(Type *type);
 void annotate_type(Function *functions);
 
 //

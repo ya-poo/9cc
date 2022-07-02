@@ -118,11 +118,11 @@ Function *program() {
     for (Function *fun = head.next; fun; fun = fun->next) {
         int offset = 0;
         for (VarList *vl = fun->locals; vl; vl = vl->tail) {
-            offset += 8;
+            offset += size_of(vl->head->type);
             vl->head->offset = offset;
         }
         for (VarList *vl = fun->params; vl; vl = vl->tail) {
-            offset += 8;
+            offset += size_of(vl->head->type);
             vl->head->offset = offset;
         }
         fun->stack_size = offset;
@@ -174,9 +174,9 @@ Var *var() {
     return var;
 }
 
-void *var_local() {
+void *push_local_var(Var *var) {
     VarList *head = calloc(1, sizeof(VarList));
-    head->head = var();
+    head->head = var;
     head->tail = current_function->locals;
     current_function->locals = head;
 }
@@ -227,11 +227,30 @@ Function *function() {
     return fn;
 }
 
-// declaration = var ";"
+// declaration = basetype ident ("[" num "]")? ";"
 Node *declaration() {
-    var_local();
-    expect(";");
+    Var *var = calloc(1, sizeof(Var));
 
+    Type *base = basetype();
+    var->name = expect_ident();
+
+    if (find_var(var->name)) {
+        error_at(token->str, "定義済みの変数名と重複しています");
+    }
+    if (consume("[")) {
+        Type *arr = calloc(1, sizeof(Type));
+        arr->kind = TY_ARRAY;
+        arr->array_size = expect_number();
+        arr->ptr_to = base;
+        expect("]");
+
+        var->type = arr;
+    } else {
+        var->type = base;
+    }
+
+    push_local_var(var);
+    expect(";");
     return new_node(ND_DECL);
 }
 

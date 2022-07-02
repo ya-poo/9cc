@@ -3,10 +3,13 @@
 int size_of(Type *type) {
     switch (type->kind) {
         case TY_INT: {
-            return 4;
+            return 8;
         }
         case TY_PTR: {
             return 8;
+        }
+        case TY_ARRAY: {
+            return size_of(type->ptr_to) * type->array_size;
         }
     }
 }
@@ -56,19 +59,19 @@ void visit(Node *node) {
             return;
         }
         case ND_ADD: {
-            if (node->rhs->type->kind == TY_PTR && node->lhs->type->kind == TY_PTR) {
-                error_at(node->token->str, "不正な計算です");
-            }
-            if (node->rhs->type->kind == TY_PTR) {
+            if (node->rhs->type->ptr_to) {
                 Node *tmp = node->lhs;
                 node->lhs = node->rhs;
                 node->rhs = tmp;
+            }
+            if (node->rhs->type->ptr_to) {
+                error_at(node->token->str, "不正な計算です");
             }
             node->type = node->lhs->type;
             return;
         }
         case ND_SUB: {
-            if (node->rhs->type->kind == TY_PTR) {
+            if (node->rhs->type->ptr_to) {
                 error_at(node->token->str, "不正な計算です");
             }
             node->type = node->lhs->type;
@@ -79,11 +82,15 @@ void visit(Node *node) {
             return;
         }
         case ND_ADDR: {
-            node->type = pointer_to(node->lhs->type);
+            if (node->lhs->type->kind == TY_ARRAY) {
+                node->type = pointer_to(node->lhs->type->ptr_to);
+            } else {
+                node->type = pointer_to(node->lhs->type);
+            }
             return;
         }
         case ND_DEREF: {
-            if (node->lhs->type->kind != TY_PTR) {
+            if (!node->lhs->type->ptr_to) {
                 node->type = node->lhs->type;
                 return;
             } else {

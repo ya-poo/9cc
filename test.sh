@@ -126,8 +126,15 @@ assert 7 'int main() { int x; int y; x=3; y=5; *(&y-1)=7; return x; }'
 assert 3 'int main() { int x; int *y; y = &x; *y = 3; return x; }'
 assert 8 'int main() { int x; x = 3; int y; y = 5; return foo(&x, y); } int foo(int *x, int y) { return *x + y; }'
 
-assert 4 'int main() { int x; return sizeof(x); }'
-assert 4 'int main() { int x; return sizeof x; }'
+assert 8 'int main() { int x; return sizeof(x); }'
+assert 8 'int main() { int x; return sizeof x; }'
 assert 8 'int main() { int *x; return sizeof(x); }'
+assert 24 'int main() { int x[3]; return sizeof(x); }'
+
+assert 3 'int main() { int a[2]; *a=1; *(a+1)=2; int *p; p=a; return *p+*(p+1); }'
+assert 3 'int main() { int x[2]; int *y; y=&x; *y=3; return *x; }'
+assert 3 'int main() { int x[3]; *x=3; return *x; }'
+assert 4 'int main() { int x[3]; *x=3; *(x+1)=4; return *(x+1); }'
+assert 5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
 
 echo OK
