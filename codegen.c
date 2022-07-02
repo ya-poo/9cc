@@ -10,8 +10,7 @@ void gen_lval(Node *node) {
     if (node->kind != ND_VAR) {
         error("代入の左辺値が変数ではありません");
     }
-    printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n", node->var->offset);
+    printf("    lea rax, [rbp-%d]\n", node->var->offset);
     printf("    push rax\n");
 }
 
