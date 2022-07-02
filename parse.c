@@ -227,7 +227,19 @@ Function *function() {
     return fn;
 }
 
-// declaration = basetype ident ("[" num "]")? ";"
+Type *read_type_suffix(Type *base) {
+    if (!consume("[")) {
+        return base;
+    }
+    Type *type = calloc(1, sizeof(Type));
+    type->kind = TY_ARRAY;
+    type->array_size = expect_number();
+    expect("]");
+    type->ptr_to = read_type_suffix(base);
+    return type;
+}
+
+// declaration = basetype ident ("[" num "]")* ";"
 Node *declaration() {
     Var *var = calloc(1, sizeof(Var));
 
@@ -237,17 +249,7 @@ Node *declaration() {
     if (find_var(var->name)) {
         error_at(token->str, "定義済みの変数名と重複しています");
     }
-    if (consume("[")) {
-        Type *arr = calloc(1, sizeof(Type));
-        arr->kind = TY_ARRAY;
-        arr->array_size = expect_number();
-        arr->ptr_to = base;
-        expect("]");
-
-        var->type = arr;
-    } else {
-        var->type = base;
-    }
+    var->type = read_type_suffix(base);
 
     push_local_var(var);
     expect(";");

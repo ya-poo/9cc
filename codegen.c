@@ -28,6 +28,12 @@ void gen_addr(Node *node) {
     error("アドレス値ではありません");
 }
 
+void load() {
+    printf("    pop rax\n");
+    printf("    mov rax, [rax]\n");
+    printf("    push rax\n");
+}
+
 void gen(Node *node) {
     switch (node->kind) {
         case ND_RETURN: {
@@ -43,9 +49,7 @@ void gen(Node *node) {
         case ND_VAR: {
             gen_lval(node);
             if (node->type->kind != TY_ARRAY) {
-                printf("    pop rax\n");
-                printf("    mov rax, [rax]\n");
-                printf("    push rax\n");
+                load();
             }
             return;
         }
@@ -64,9 +68,9 @@ void gen(Node *node) {
         }
         case ND_DEREF: {
             gen(node->lhs);
-            printf("    pop rax\n");
-            printf("    mov rax, [rax]\n");
-            printf("    push rax\n");
+            if (node->type->kind != TY_ARRAY) {
+                load();
+            }
             return;
         }
         case ND_IF: {
@@ -165,14 +169,14 @@ void gen(Node *node) {
 
     switch (node->kind) {
         case ND_ADD:
-            if (node->type->kind == TY_PTR) {
-                printf("    imul rdi, 8\n");
+            if (node->type->ptr_to) {
+                printf("    imul rdi, %d\n", size_of(node->type->ptr_to));
             }
             printf("    add rax, rdi\n");
             break;
         case ND_SUB:
-            if (node->type->kind == TY_PTR) {
-                printf("    imul rdi, 8\n");
+            if (node->type->ptr_to) {
+                printf("    imul rdi, %d\n", size_of(node->type->ptr_to));
             }
             printf("    sub rax, rdi\n");
             break;
