@@ -413,6 +413,7 @@ Node *mul() {
 
 // unary = ("+" | "-" | "*" | "&")? unary
 //       | "sizeof" unary
+//       | primary ("[" expr "]")*
 //       | primary
 Node *unary() {
     if (consume("+")) {
@@ -430,7 +431,14 @@ Node *unary() {
     if (consume("sizeof")) {
         return new_binary(ND_SIZEOF, unary(), NULL);
     }
-    return primary();
+
+    Node *node = primary();
+    while (consume("[")) {
+        Node *exp = new_binary(ND_ADD, node, expr());
+        expect("]");
+        node = new_binary(ND_DEREF, exp, NULL);
+    }
+    return node;
 }
 
 // func-args = "(" (assign ("," assign)* )? ")"
