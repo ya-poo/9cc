@@ -98,7 +98,9 @@ struct Node {
 
     int val;  // Used if kind == ND_NUM
 
-    Var *var;  // Used if kind == ND_VAR
+    // Used if kind == ND_VAR
+    Var *var;
+    bool is_local;
 
     Node *next;  // Used if kind == ND_BLOCK
 

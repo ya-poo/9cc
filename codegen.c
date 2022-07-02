@@ -6,18 +6,15 @@ char *param_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen(Node *node);
 
-void gen_lval(Node *node) {
-    if (node->kind != ND_VAR) {
-        error("代入の左辺値が変数ではありません");
-    }
-    printf("    lea rax, [rbp-%d]\n", node->var->offset);
-    printf("    push rax\n");
-}
-
 void gen_addr(Node *node) {
     switch (node->kind) {
         case ND_VAR: {
-            gen_lval(node);
+            if (node->is_local) {
+                printf("    lea rax, [rbp-%d]\n", node->var->offset);
+                printf("    push rax\n");
+            } else {
+                printf("    push offset %s\n", node->var->name);
+            }
             return;
         }
         case ND_DEREF: {
@@ -26,6 +23,13 @@ void gen_addr(Node *node) {
         }
     }
     error("アドレス値ではありません");
+}
+
+void gen_lval(Node *node) {
+    if (node->type->kind == TY_ARRAY) {
+        error("代入の左辺値が変数ではありません");
+    }
+    gen_addr(node);
 }
 
 void load() {
@@ -47,7 +51,7 @@ void gen(Node *node) {
             return;
         }
         case ND_VAR: {
-            gen_lval(node);
+            gen_addr(node);
             if (node->type->kind != TY_ARRAY) {
                 load();
             }
@@ -213,6 +217,15 @@ void gen(Node *node) {
 
 void codegen(Program *program) {
     printf(".intel_syntax noprefix\n");
+
+    // Global Variables
+    printf(".data\n");
+    for (VarList *vl = program->global; vl; vl = vl->tail) {
+        printf("%s:\n", vl->head->name);
+        printf("    .zero %d\n", size_of(vl->head->type));
+    }
+
+    printf(".text\n");
     for (Function *fun = program->functions; fun; fun = fun->next) {
         funcname = fun->name;
 

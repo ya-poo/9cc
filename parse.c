@@ -89,7 +89,11 @@ Node *new_num(int val) {
     return node;
 }
 
+void global_var();
 Function *function();
+Type *basetype();
+Type *read_type_suffix(Type *base);
+Node *declaration();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -101,18 +105,55 @@ Node *unary();
 Node *func_args_or_null();
 Node *primary();
 
+bool is_function() {
+    Token *tok = token;
+    basetype();
+    bool is_func = consume_ident() && consume("(");
+    token = tok;
+
+    return is_func;
+}
+
+Program *prog;
 Function *current_function;
+
+void push_global_var(Var *var) {
+    VarList *head = calloc(1, sizeof(VarList));
+    head->head = var;
+    head->tail = prog->global;
+    prog->global = head;
+}
+
+// global-bar = basetype ident ("[" num "]")* ";"
+void global_var() {
+    Var *var = calloc(1, sizeof(Var));
+    Type *type = basetype();
+    var->name = expect_ident();
+    for (VarList *vl = prog->global; vl; vl = vl->tail) {
+        if (!strcmp(vl->head->name, var->name)) {
+            error_at(token->str, "定義済みのグローバル変数と名前が重複しています");
+        }
+    }
+    type = read_type_suffix(type);
+    var->type = type;
+    expect(";");
+    push_global_var(var);
+}
 
 // program = (function | grobal-var)*
 Program *program() {
+    prog = calloc(1, sizeof(Program));
     Function head;
     head.next = NULL;
     Function *cur = &head;
-    VarList *global = calloc(1, sizeof(VarList));
 
     while (!at_eof()) {
-        cur->next = function();
-        cur = cur->next;
+        if (is_function()) {
+            cur->next = function();
+            cur = cur->next;
+        } else {
+            global_var();
+        }
     }
 
     // Set offset of params / locals
@@ -128,21 +169,34 @@ Program *program() {
         }
         fun->stack_size = offset;
     }
+    int offset = 0;
+    for (VarList *vl = prog->global; vl; vl = vl->tail) {
+        offset += size_of(vl->head->type);
+        vl->head->offset = offset;
+    }
 
-    Program *prog = calloc(1, sizeof(Program));
     prog->functions = head.next;
-    prog->global = global;
 
     return prog;
 }
 
-VarList *find_var(char *ident) {
+VarList *find_local_var(char *ident) {
     for (VarList *list = current_function->locals; list; list = list->tail) {
         if (!strcmp(list->head->name, ident)) {
             return list;
         }
     }
     for (VarList *list = current_function->params; list; list = list->tail) {
+        if (!strcmp(list->head->name, ident)) {
+            return list;
+        }
+    }
+
+    return NULL;
+}
+
+VarList *find_global_var(char *ident) {
+    for (VarList *list = prog->global; list; list = list->tail) {
         if (!strcmp(list->head->name, ident)) {
             return list;
         }
@@ -172,7 +226,7 @@ Var *var() {
     Var *var = calloc(1, sizeof(Var));
     var->type = basetype();
     var->name = expect_ident();
-    if (find_var(var->name)) {
+    if (find_local_var(var->name)) {
         error_at(token->str, "定義済みの変数名と重複しています");
     }
 
@@ -251,7 +305,7 @@ Node *declaration() {
     Type *base = basetype();
     var->name = expect_ident();
 
-    if (find_var(var->name)) {
+    if (find_local_var(var->name)) {
         error_at(token->str, "定義済みの変数名と重複しています");
     }
     var->type = read_type_suffix(base);
@@ -487,11 +541,17 @@ Node *primary() {
             Node *node = new_node(ND_VAR);
             char *ident_name = strndup(ident_token->str, ident_token->len);
 
-            VarList *list = find_var(ident_name);
-            if (!list) {
+            VarList *local_vl = find_local_var(ident_name);
+            VarList *global_vl = find_global_var(ident_name);
+            if (!local_vl && !global_vl) {
                 error_at(token->str, "未定義の変数です");
+            } else if (local_vl) {
+                node->var = local_vl->head;
+                node->is_local = true;
+            } else {
+                node->var = global_vl->head;
+                node->is_local = false;
             }
-            node->var = list->head;
             return node;
         }
     }
