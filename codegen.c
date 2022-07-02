@@ -2,7 +2,8 @@
 
 int jump_label_counts = 0;
 char *funcname;
-char *param_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen(Node *node);
 
@@ -32,10 +33,25 @@ void gen_lval(Node *node) {
     gen_addr(node);
 }
 
-void load() {
+void load(Type *type) {
     printf("    pop rax\n");
-    printf("    mov rax, [rax]\n");
+    if (size_of(type) == 1) {
+        printf("    movsx rax, byte ptr [rax]\n");
+    } else {
+        printf("    mov rax, [rax]\n");
+    }
     printf("    push rax\n");
+}
+
+void store(Type *type) {
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    if (size_of(type) == 1) {
+        printf("    mov [rax], dil\n");
+    } else {
+        printf("    mov [rax], rdi\n");
+    }
+    printf("    push rdi\n");
 }
 
 void gen(Node *node) {
@@ -53,17 +69,14 @@ void gen(Node *node) {
         case ND_VAR: {
             gen_addr(node);
             if (node->type->kind != TY_ARRAY) {
-                load();
+                load(node->type);
             }
             return;
         }
         case ND_ASSIGN: {
             gen_addr(node->lhs);
             gen(node->rhs);
-            printf("    pop rdi\n");
-            printf("    pop rax\n");
-            printf("    mov [rax], rdi\n");
-            printf("    push rdi\n");
+            store(node->type);
             return;
         }
         case ND_ADDR: {
@@ -73,7 +86,7 @@ void gen(Node *node) {
         case ND_DEREF: {
             gen(node->lhs);
             if (node->type->kind != TY_ARRAY) {
-                load();
+                load(node->type);
             }
             return;
         }
@@ -138,7 +151,7 @@ void gen(Node *node) {
                 args++;
             }
             for (int i = args - 1; i >= 0; i--) {
-                printf("    pop %s\n", param_regs[i]);
+                printf("    pop %s\n", argreg8[i]);
             }
 
             // RSP を 16 の倍数にする
@@ -239,8 +252,14 @@ void codegen(Program *program) {
 
         // function params
         int args = 0;
-        for (VarList *list = fun->params; list; list = list->tail) {
-            printf("    mov [rbp-%d], %s\n", list->head->offset, param_regs[args++]);
+        for (VarList *vl = fun->params; vl; vl = vl->tail) {
+            int size = size_of(vl->head->type);
+            if (size == 1) {
+                printf("    mov [rbp-%d], %s\n", vl->head->offset, argreg1[args++]);
+            } else {
+                assert(size == 8);
+                printf("    mov [rbp-%d], %s\n", vl->head->offset, argreg8[args++]);
+            }
         }
 
         for (Node *node = fun->node; node; node = node->next) {

@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -32,7 +33,7 @@ typedef struct Var Var;
 // parse.c
 //
 
-typedef enum { TY_INT, TY_PTR, TY_ARRAY } TypeKind;
+typedef enum { TY_INT, TY_PTR, TY_ARRAY, TY_CHAR } TypeKind;
 
 typedef struct Type Type;
 

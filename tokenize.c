@@ -53,7 +53,7 @@ bool is_lval_initial(char c) {
 
 bool is_lval_char(char c) { return is_lval_initial(c) || ('0' <= c && c <= '9'); }
 
-static char *keywords[] = {"return", "if", "else", "while", "for", "int", "sizeof"};
+static char *keywords[] = {"return", "if", "else", "while", "for", "sizeof", "int", "char"};
 static char *operators[] = {"==", "!=", "<=", ">="};
 static char *symbols[] = {"+", "-", "*", "/", "(", ")", "<", ">",
                           ";", "=", "{", "}", ",", "&", "[", "]"};

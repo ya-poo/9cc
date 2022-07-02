@@ -205,9 +205,16 @@ VarList *find_global_var(char *ident) {
     return NULL;
 }
 
-// basetype = "int" "*"*
+// basetype = ("int" | "char") "*"*
 Type *basetype() {
-    expect("int");
+    TypeKind kind;
+    if (consume("char")) {
+        kind = TY_CHAR;
+    } else {
+        expect("int");
+        kind = TY_INT;
+    }
+
     Type head;
     Type *cur = calloc(1, sizeof(Type));
     head.ptr_to = cur;
@@ -216,7 +223,7 @@ Type *basetype() {
         cur->kind = TY_PTR;
         cur = cur->ptr_to;
     }
-    cur->kind = TY_INT;
+    cur->kind = kind;
 
     return head.ptr_to;
 }
@@ -315,6 +322,8 @@ Node *declaration() {
     return new_node(ND_DECL);
 }
 
+bool is_typename() { return peek("char") || peek("int"); }
+
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
@@ -385,7 +394,7 @@ Node *stmt() {
         return node;
     }
 
-    if (peek("int")) {
+    if (is_typename()) {
         return declaration();
     }
 
