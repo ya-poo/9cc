@@ -17,17 +17,28 @@ int size_of(Type *type) {
     }
 }
 
-Type *int_type() {
-    Type *type = calloc(1, sizeof(Type));
-    type->kind = TY_INT;
-    return type;
+Type *new_type(TypeKind kind) {
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = kind;
+    return ty;
 }
+
+Type *int_type() { return new_type(TY_INT); }
+
+Type *char_type() { return new_type(TY_CHAR); }
 
 Type *pointer_to(Type *base) {
     Type *type = calloc(1, sizeof(Type));
     type->kind = TY_PTR;
     type->ptr_to = base;
     return type;
+}
+
+Type *array_of(Type *base, int size) {
+    Type *ty = new_type(TY_ARRAY);
+    ty->ptr_to = base;
+    ty->array_size = size;
+    return ty;
 }
 
 void visit(Node *node) {

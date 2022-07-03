@@ -110,6 +110,22 @@ Token *tokenize(char *p) {
             continue;
         }
 
+        if (*p == '"') {
+            char *q = p++;
+            while (*p && *p != '"') {
+                p++;
+            }
+            if (!*p) {
+                error_at(q, "不正な文字列です");
+            }
+            p++;
+
+            cur = new_token(TK_STRING, cur, q, q - p);
+            cur->contents = strndup(q + 1, p - q - 2);
+            cur->contents_len = p - q - 1;
+            continue;
+        }
+
         if (is_lval_initial(*p)) {
             int length = 0;
             while (is_lval_char(*(p + length))) {

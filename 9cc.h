@@ -14,6 +14,7 @@ typedef enum {
     TK_RESERVED,  // 記号, 予約語
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数
+    TK_STRING,    // 文字列
     TK_EOF,       // end-of-file
 } TokenKind;
 
@@ -22,9 +23,14 @@ typedef struct Token Token;
 struct Token {
     TokenKind kind;
     Token *next;
-    int val;    // kindがTK_NUMの場合、その数値
     char *str;  // そのトークンとそれ以降の文字列
-    int len;
+    int len;    // トークンの長さ
+
+    int val;  // Used if kind == TK_NUM
+
+    // Used if kind == TK_STRING
+    char *contents;
+    int contents_len;
 };
 
 typedef struct Var Var;
@@ -47,8 +53,13 @@ struct Type {
 struct Var {
     // 変数
     char *name;  // 変数名
-    int offset;  // RBPからのオフセット
     Type *type;  // 変数の型
+
+    int offset;  // RBPからのオフセット。ローカル変数でのみ使用。
+
+    // Used for string literal
+    char *contents;
+    int contents_len;
 };
 
 typedef struct VarList VarList;
@@ -150,6 +161,9 @@ void codegen(Program *program);
 //
 int size_of(Type *type);
 void annotate_type(Program *program);
+Type *array_of(Type *base, int size);
+Type *int_type();
+Type *char_type();
 
 //
 // global

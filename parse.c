@@ -114,14 +114,14 @@ bool is_function() {
     return is_func;
 }
 
-Program *prog;
+Program *current_program;
 Function *current_function;
 
 void push_global_var(Var *var) {
     VarList *head = calloc(1, sizeof(VarList));
     head->head = var;
-    head->tail = prog->global;
-    prog->global = head;
+    head->tail = current_program->global;
+    current_program->global = head;
 }
 
 // global-bar = basetype ident ("[" num "]")* ";"
@@ -129,7 +129,7 @@ void global_var() {
     Var *var = calloc(1, sizeof(Var));
     Type *type = basetype();
     var->name = expect_ident();
-    for (VarList *vl = prog->global; vl; vl = vl->tail) {
+    for (VarList *vl = current_program->global; vl; vl = vl->tail) {
         if (!strcmp(vl->head->name, var->name)) {
             error_at(token->str, "定義済みのグローバル変数と名前が重複しています");
         }
@@ -142,7 +142,7 @@ void global_var() {
 
 // program = (function | grobal-var)*
 Program *program() {
-    prog = calloc(1, sizeof(Program));
+    current_program = calloc(1, sizeof(Program));
     Function head;
     head.next = NULL;
     Function *cur = &head;
@@ -169,15 +169,10 @@ Program *program() {
         }
         fun->stack_size = offset;
     }
-    int offset = 0;
-    for (VarList *vl = prog->global; vl; vl = vl->tail) {
-        offset += size_of(vl->head->type);
-        vl->head->offset = offset;
-    }
 
-    prog->functions = head.next;
+    current_program->functions = head.next;
 
-    return prog;
+    return current_program;
 }
 
 VarList *find_local_var(char *ident) {
@@ -196,7 +191,7 @@ VarList *find_local_var(char *ident) {
 }
 
 VarList *find_global_var(char *ident) {
-    for (VarList *list = prog->global; list; list = list->tail) {
+    for (VarList *list = current_program->global; list; list = list->tail) {
         if (!strcmp(list->head->name, ident)) {
             return list;
         }
@@ -527,9 +522,17 @@ Node *func_args_or_null() {
     return head;
 }
 
+static int string_literal_count = 0;
+char *string_litera_label() {
+    char buf[20];
+    sprintf(buf, ".L.data.%d", string_literal_count++);
+    return strndup(buf, 20);
+}
+
 // primary = "(" expr ")"
 //         | ident func-args
 //         | ident
+//         | str
 //         | num
 Node *primary() {
     if (consume("(")) {
@@ -538,31 +541,51 @@ Node *primary() {
         return node;
     }
 
-    Token *ident_token = consume_ident();
-    if (ident_token) {
+    Token *tok;
+    if (tok = consume_ident()) {
         if (consume("(")) {
             Node *node = new_node(ND_FUNCALL);
             Node *func_args = func_args_or_null();
-            node->funcname = strndup(ident_token->str, ident_token->len);
+            node->funcname = strndup(tok->str, tok->len);
             node->args = func_args;
             return node;
-        } else {
-            Node *node = new_node(ND_VAR);
-            char *ident_name = strndup(ident_token->str, ident_token->len);
-
-            VarList *local_vl = find_local_var(ident_name);
-            VarList *global_vl = find_global_var(ident_name);
-            if (!local_vl && !global_vl) {
-                error_at(token->str, "未定義の変数です");
-            } else if (local_vl) {
-                node->var = local_vl->head;
-                node->is_local = true;
-            } else {
-                node->var = global_vl->head;
-                node->is_local = false;
-            }
-            return node;
         }
+
+        Node *node = new_node(ND_VAR);
+        char *ident_name = strndup(tok->str, tok->len);
+
+        VarList *local_vl = find_local_var(ident_name);
+        VarList *global_vl = find_global_var(ident_name);
+        if (!local_vl && !global_vl) {
+            error_at(token->str, "未定義の変数です");
+        } else if (local_vl) {
+            node->var = local_vl->head;
+            node->is_local = true;
+        } else {
+            node->var = global_vl->head;
+            node->is_local = false;
+        }
+        return node;
     }
+
+    tok = token;
+    if (tok->kind == TK_STRING) {
+        token = token->next;
+        Type *type = array_of(char_type(), tok->contents_len);
+        Var *var = calloc(1, sizeof(Var));
+
+        var->name = string_litera_label();
+        var->type = type;
+        var->contents = tok->contents;
+        var->contents_len = tok->contents_len;
+        push_global_var(var);
+
+        Node *node = new_node(ND_VAR);
+        node->var = var;
+        node->is_local = false;
+        return node;
+    }
+
+    assert(tok->kind == TK_NUM);
     return new_num(expect_number());
 }

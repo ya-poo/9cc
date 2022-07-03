@@ -235,7 +235,14 @@ void codegen(Program *program) {
     printf(".data\n");
     for (VarList *vl = program->global; vl; vl = vl->tail) {
         printf("%s:\n", vl->head->name);
-        printf("    .zero %d\n", size_of(vl->head->type));
+
+        if (!vl->head->contents) {
+            printf("    .zero %d\n", size_of(vl->head->type));
+        } else {
+            for (int i = 0; i < vl->head->contents_len; i++) {
+                printf("    .byte %d\n", vl->head->contents[i]);
+            }
+        }
     }
 
     printf(".text\n");
